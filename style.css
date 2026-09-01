@@ -1,4 +1,4 @@
- /* .body-bg {
+ .body-bg {
 	width: 100%;
 	height: 100%;
 	position: fixed;
@@ -7,6 +7,8 @@
 	transform: translateX(-50%) translateY(-50%);
 	background: radial-gradient(#00E7BD, #013A4E);
 	transition: all 0.5s;
+	display: flex;
+  	flex-direction: column;
 }
 
 .container {
@@ -69,18 +71,17 @@
 	}
 
 
-}  */
+} 
 
 
-/* This is how your website looks on mobile by default */
+/* This is how your website looks on mobile by default
 .body {
-  display: flex;
-  flex-direction: column;
+
 }
 
-/* This changes the layout for screens wider than 48em */
+/* This changes the layout for screens wider than 48em *
 @media (min-width: 48em) {
   main {
     flex-direction: row;
   }
-}
+} */
