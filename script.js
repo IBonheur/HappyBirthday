@@ -1,7 +1,7 @@
 
 
 
-alert()
+
 var messages = ["Hello There, It's my Birthday  <br /> Happy Birthday to Me <br> BONHEUR ",
 
 	];

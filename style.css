@@ -41,7 +41,7 @@
 	color: #fff;
 }
 
-@media only screen and (max-width: 763px) {
+/* @media only screen and (max-width: 763px) {
 	.container-data {
 		padding: 24px;
 		position: absolute;
@@ -68,20 +68,9 @@
 		color: #fff;
 		font-family: Arial;
 		font-size: 4vw;
-	}
+	} */
 
 
 } 
 
 
-/* This is how your website looks on mobile by default
-.body {
-
-}
-
-/* This changes the layout for screens wider than 48em *
-@media (min-width: 48em) {
-  main {
-    flex-direction: row;
-  }
-} */
