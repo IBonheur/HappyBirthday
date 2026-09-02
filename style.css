@@ -11,7 +11,7 @@
   	flex-direction: column;
 }
 
-/* .container {
+ .container {
 	width: 80%;
 	height: 80%;
 	position: fixed;
@@ -33,7 +33,7 @@
 	color: #fff;
 	font-family: Arial;
 	font-size: 3vw; 
-} */
+}
 
 .float{
 	font-weight: 80% !important;
@@ -41,7 +41,7 @@
 	color: #fff;
 }
 
-/* @media only screen and (max-width: 763px) {
+@media only screen and (max-width: 763px) {
 	.container-data {
 		padding: 24px;
 		position: absolute;
@@ -70,6 +70,6 @@
 		
 
 
-} *
+
 
 
