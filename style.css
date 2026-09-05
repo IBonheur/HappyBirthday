@@ -238,3 +238,186 @@ body::after {
 		scroll-behavior: auto !important;
 	}
 }
+
+.container-data {
+	max-height: 100%;
+	overflow-y: auto;
+	border: 1px solid rgba(255, 250, 240, 0.22);
+	border-radius: 1.5rem;
+	background: rgba(22, 15, 43, 0.42);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+}
+
+.eyebrow {
+	margin: 0 0 0.8rem;
+	color: var(--gold);
+	font-size: clamp(0.65rem, 1.6vw, 0.85rem);
+	font-weight: 700;
+	letter-spacing: 0.16em;
+	text-transform: uppercase;
+}
+
+#msg {
+	margin: 0;
+}
+
+.intro {
+	max-width: 34rem;
+	margin: 1rem auto 1.5rem;
+	color: var(--muted-ink);
+	font-size: clamp(0.9rem, 1.8vw, 1.05rem);
+	line-height: 1.5;
+}
+
+.wish-form {
+	max-width: 38rem;
+	margin: 0 auto;
+	text-align: left;
+}
+
+.wish-form label {
+	display: block;
+	margin-bottom: 0.45rem;
+	color: var(--ink);
+	font-size: 0.78rem;
+	font-weight: 700;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.form-row {
+	display: flex;
+	gap: 0.6rem;
+}
+
+.wish-form input,
+.wish-form button {
+	min-height: 3rem;
+	border: 0;
+	border-radius: 0.75rem;
+	font: inherit;
+}
+
+.wish-form input {
+	min-width: 0;
+	flex: 1;
+	padding: 0 1rem;
+	color: var(--night);
+	background: rgba(255, 250, 240, 0.96);
+}
+
+.wish-form input::placeholder {
+	color: #6c6470;
+}
+
+.wish-form input:focus-visible,
+.wish-form button:focus-visible {
+	outline: 3px solid var(--gold);
+	outline-offset: 3px;
+}
+
+.wish-form button {
+	padding: 0 1rem;
+	color: var(--night);
+	background: var(--gold);
+	font-weight: 800;
+	cursor: pointer;
+	transition: transform 180ms ease, background-color 180ms ease;
+}
+
+.wish-form button:hover {
+	background: #ffe29a;
+	transform: translateY(-2px);
+}
+
+.form-status {
+	min-height: 1.25rem;
+	margin: 0.6rem 0 0;
+	color: var(--mint);
+	font-size: 0.85rem;
+}
+
+.wishes {
+	max-width: 38rem;
+	margin: 0.4rem auto 0;
+	text-align: left;
+}
+
+.section-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 0.5rem;
+	color: var(--muted-ink);
+}
+
+.section-heading h2 {
+	margin: 0;
+	font-size: 0.9rem;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+#wish-count {
+	display: grid;
+	width: 1.5rem;
+	height: 1.5rem;
+	place-items: center;
+	border-radius: 50%;
+	color: var(--night);
+	background: var(--mint);
+	font-size: 0.75rem;
+	font-weight: 800;
+}
+
+.wish-list {
+	display: grid;
+	gap: 0.45rem;
+	max-height: 7.2rem;
+	margin: 0;
+	padding: 0;
+	overflow-y: auto;
+	list-style: none;
+}
+
+.wish-list li {
+	padding: 0.65rem 0.8rem;
+	border-left: 3px solid var(--coral);
+	border-radius: 0 0.5rem 0.5rem 0;
+	color: var(--ink);
+	background: rgba(255, 250, 240, 0.1);
+	font-size: 0.9rem;
+	line-height: 1.35;
+	animation: wish-in 350ms ease both;
+}
+
+.wish-list:empty::before {
+	content: "Your wishes will appear here.";
+	padding: 0.65rem 0;
+	color: rgba(255, 231, 194, 0.72);
+	font-size: 0.85rem;
+	font-style: italic;
+}
+
+@keyframes wish-in {
+	from { opacity: 0; transform: translateX(-0.5rem); }
+	to { opacity: 1; transform: translateX(0); }
+}
+
+@media (max-width: 600px) {
+	.container-data {
+		width: calc(100% - 2rem);
+		padding: 1.25rem;
+		border-radius: 1.15rem;
+	}
+
+	.form-row {
+		flex-direction: column;
+	}
+
+	.wish-form input,
+	.wish-form button {
+		width: 100%;
+	}
+}
