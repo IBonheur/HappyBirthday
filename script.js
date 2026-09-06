@@ -1,4 +1,5 @@
 const wishForm = document.querySelector("#wish-form");
+const birthdayImage = document.querySelector("#birthday-image");
 const wishName = document.querySelector("#wish-name");
 const wishInput = document.querySelector("#wish-input");
 const wishPanel = document.querySelector("#wish-panel");
@@ -17,10 +18,12 @@ const starterWishes = [
 	"More joy, laughter, and beautiful memories!",
 	"Cheers to your happiest year yet!"
 ];
+const birthdayImages = ["image/image1.jpg", "image/image2.jpg"];
 
 let wishes = loadWishes();
 let tickerIndex = 0;
 let tickerTimer;
+let imageIndex = 0;
 
 function loadWishes() {
 	try {
@@ -64,6 +67,13 @@ function startTicker() {
 	tickerTimer = window.setInterval(showNextWish, 4200);
 }
 
+function rotateBirthdayImage() {
+	imageIndex = (imageIndex + 1) % birthdayImages.length;
+	birthdayImage.classList.add("is-changing");
+	birthdayImage.addEventListener("animationend", () => birthdayImage.classList.remove("is-changing"), { once: true });
+	birthdayImage.src = birthdayImages[imageIndex];
+}
+
 function renderWishes() {
 	wishList.replaceChildren();
 	wishes.forEach((wish) => {
@@ -103,6 +113,7 @@ wishForm.addEventListener("submit", (event) => {
 
 renderWishes();
 startTicker();
+window.setInterval(rotateBirthdayImage, 2000);
 window.setTimeout(() => {
 	wishPanel.hidden = false;
 	wishInput.focus({ preventScroll: true });
