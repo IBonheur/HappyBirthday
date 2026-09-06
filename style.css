@@ -84,6 +84,49 @@ body {
 .body-bg span:nth-child(4) { top: 78%; right: 8%; animation-delay: -10s; }
 .body-bg span:nth-child(5) { top: 42%; left: 3%; animation-delay: -8s; }
 .body-bg span:nth-child(6) { top: 35%; right: 4%; animation-delay: -1s; }
+.body-bg span:nth-child(n + 7) { opacity: 0; }
+.body-bg span:nth-child(7) { top: 4%; left: 25%; }
+.body-bg span:nth-child(8) { top: 12%; left: 42%; }
+.body-bg span:nth-child(9) { top: 26%; right: 24%; }
+.body-bg span:nth-child(10) { top: 57%; right: 19%; }
+.body-bg span:nth-child(11) { top: 73%; left: 24%; }
+.body-bg span:nth-child(12) { top: 84%; left: 46%; }
+.body-bg span:nth-child(13) { top: 32%; left: 15%; }
+.body-bg span:nth-child(14) { top: 48%; right: 10%; }
+.body-bg span:nth-child(15) { top: 62%; left: 40%; }
+.body-bg span:nth-child(16) { top: 22%; left: 58%; }
+.body-bg span:nth-child(17) { top: 80%; right: 34%; }
+.body-bg span:nth-child(18) { top: 10%; right: 36%; }
+
+.body-bg.scene-balloons span:nth-child(1),
+.body-bg.scene-balloons span:nth-child(4),
+.body-bg.scene-balloons span:nth-child(7),
+.body-bg.scene-balloons span:nth-child(10),
+.body-bg.scene-balloons span:nth-child(14),
+.body-bg.scene-balloons span:nth-child(18) {
+	opacity: 1;
+	animation: balloon-rise 14s ease-in-out infinite;
+}
+
+.body-bg.scene-cakes span:nth-child(3),
+.body-bg.scene-cakes span:nth-child(8),
+.body-bg.scene-cakes span:nth-child(12),
+.body-bg.scene-cakes span:nth-child(15),
+.body-bg.scene-cakes span:nth-child(17) {
+	opacity: 1;
+	font-size: clamp(2rem, 6vw, 4rem);
+	animation: cake-bounce 4s ease-in-out infinite;
+}
+
+.body-bg.scene-hearts span:nth-child(2),
+.body-bg.scene-hearts span:nth-child(5),
+.body-bg.scene-hearts span:nth-child(9),
+.body-bg.scene-hearts span:nth-child(13),
+.body-bg.scene-hearts span:nth-child(16) {
+	opacity: 1;
+	color: var(--coral);
+	animation: heart-dance 6s ease-in-out infinite;
+}
 
 .page-shell {
 	width: min(100%, 64rem);
@@ -375,6 +418,9 @@ body {
 @keyframes twinkle { 0%, 100% { opacity: 0.5; transform: rotate(-2deg); } 50% { opacity: 1; transform: rotate(2deg); } }
 @keyframes float-around { 0%, 100% { transform: translate(0, 0) rotate(-8deg); } 33% { transform: translate(1.4rem, -1.2rem) rotate(8deg); } 66% { transform: translate(-1rem, 1rem) rotate(18deg); } }
 @keyframes image-change { from { opacity: 0.35; transform: scale(0.985); } to { opacity: 1; transform: scale(1); } }
+@keyframes balloon-rise { 0%, 100% { transform: translate(0, 1rem) rotate(-8deg); } 50% { transform: translate(1.3rem, -2rem) rotate(8deg); } }
+@keyframes cake-bounce { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-1.2rem) rotate(4deg); } }
+@keyframes heart-dance { 0%, 100% { transform: translate(0, 0) rotate(-12deg) scale(0.9); } 50% { transform: translate(1rem, -1.4rem) rotate(12deg) scale(1.12); } }
 
 @media (max-width: 600px) {
 	body { place-items: start center; padding-top: max(0.75rem, env(safe-area-inset-top)); }

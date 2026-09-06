@@ -21,12 +21,15 @@ const starterWishes = [
 ];
 const birthdayImages = ["image/image1.jpg", "image/image2.jpg"];
 const blockedShortcuts = new Set(["s", "u", "p"]);
+const backgroundScenes = ["scene-balloons", "scene-cakes", "scene-hearts"];
+const background = document.querySelector(".body-bg");
 
 let wishes = loadWishes();
 let tickerIndex = 0;
 let tickerTimer;
 let imageIndex = 0;
 let imageTimer;
+let sceneIndex = 0;
 
 document.addEventListener("contextmenu", (event) => event.preventDefault());
 document.addEventListener("dragstart", (event) => event.preventDefault());
@@ -101,8 +104,8 @@ function renderWishes() {
 	wishCount.textContent = wishes.length;
 }
 
-function showThankYou() {
-	toast.textContent = "Thank you for your lovely wish!";
+function showThankYou(name) {
+	toast.textContent = `Thank you, ${name}! Your wish is wrapped in love 💖`;
 	toast.classList.add("is-visible");
 	window.setTimeout(() => toast.classList.remove("is-visible"), 3200);
 }
@@ -125,12 +128,19 @@ wishForm.addEventListener("submit", (event) => {
 	showNextWish();
 	wishForm.reset();
 	formStatus.textContent = "Wish added.";
-	showThankYou();
+	showThankYou(name);
 });
+
+function changeBackgroundScene() {
+	background.classList.remove(...backgroundScenes);
+	sceneIndex = (sceneIndex + 1) % backgroundScenes.length;
+	background.classList.add(backgroundScenes[sceneIndex]);
+}
 
 renderWishes();
 startTicker();
 imageTimer = window.setInterval(rotateBirthdayImage, imageChangeDelay);
+window.setInterval(changeBackgroundScene, 12000);
 window.setTimeout(() => {
 	wishPanel.hidden = false;
 	wishInput.focus({ preventScroll: true });
