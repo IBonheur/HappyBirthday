@@ -12,6 +12,7 @@ const formStatus = document.querySelector("#form-status");
 const toast = document.querySelector("#toast");
 const storageKey = "bonheur-birthday-wishes";
 const revealDelay = 20000;
+const imageChangeDelay = 40000;
 const starterWishes = [
 	"Wishing you a year full of bright moments!",
 	"May your birthday be as wonderful as you are.",
@@ -25,6 +26,7 @@ let wishes = loadWishes();
 let tickerIndex = 0;
 let tickerTimer;
 let imageIndex = 0;
+let imageTimer;
 
 document.addEventListener("contextmenu", (event) => event.preventDefault());
 document.addEventListener("dragstart", (event) => event.preventDefault());
@@ -128,7 +130,7 @@ wishForm.addEventListener("submit", (event) => {
 
 renderWishes();
 startTicker();
-window.setInterval(rotateBirthdayImage, 2000);
+imageTimer = window.setInterval(rotateBirthdayImage, imageChangeDelay);
 window.setTimeout(() => {
 	wishPanel.hidden = false;
 	wishInput.focus({ preventScroll: true });
@@ -137,7 +139,9 @@ window.setTimeout(() => {
 document.addEventListener("visibilitychange", () => {
 	if (document.hidden) {
 		window.clearInterval(tickerTimer);
+		window.clearInterval(imageTimer);
 	} else {
 		startTicker();
+		imageTimer = window.setInterval(rotateBirthdayImage, imageChangeDelay);
 	}
 });
