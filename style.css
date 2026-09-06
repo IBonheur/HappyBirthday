@@ -8,7 +8,17 @@
 	--glass: rgba(18, 13, 36, 0.36);
 }
 
-* { box-sizing: border-box; }
+* {
+	box-sizing: border-box;
+	-webkit-user-select: none;
+	user-select: none;
+}
+
+input,
+button {
+	-webkit-user-select: text;
+	user-select: text;
+}
 
 html, body {
 	min-width: 320px;
@@ -117,6 +127,8 @@ body {
 	object-fit: contain;
 	object-position: center;
 	filter: saturate(1.08) contrast(1.02);
+	-webkit-user-drag: none;
+	pointer-events: none;
 }
 
 .birthday-photo img.is-changing {

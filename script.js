@@ -19,11 +19,26 @@ const starterWishes = [
 	"Cheers to your happiest year yet!"
 ];
 const birthdayImages = ["image/image1.jpg", "image/image2.jpg"];
+const blockedShortcuts = new Set(["s", "u", "p"]);
 
 let wishes = loadWishes();
 let tickerIndex = 0;
 let tickerTimer;
 let imageIndex = 0;
+
+document.addEventListener("contextmenu", (event) => event.preventDefault());
+document.addEventListener("dragstart", (event) => event.preventDefault());
+document.addEventListener("selectstart", (event) => {
+	if (!(event.target instanceof HTMLInputElement)) {
+		event.preventDefault();
+	}
+});
+document.addEventListener("keydown", (event) => {
+	const key = event.key.toLowerCase();
+	if ((event.ctrlKey || event.metaKey) && blockedShortcuts.has(key)) {
+		event.preventDefault();
+	}
+});
 
 function loadWishes() {
 	try {
