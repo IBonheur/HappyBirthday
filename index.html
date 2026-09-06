@@ -4,40 +4,59 @@
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
-	<meta name="description" content="Send a birthday wish to Bonheur.">
+	<meta name="description" content="Celebrate Bonheur with a birthday wish.">
 	<title>Happy Birthday, Bonheur</title>
 	<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
-	<div class="body-bg" aria-hidden="true"></div>
+	<div class="body-bg" aria-hidden="true">
+		<span>🎈</span><span>♡</span><span>🎂</span><span>🎈</span><span>♡</span><span>🎉</span>
+	</div>
 
-	<main class="container" style="background-image: url('./image/image1.jpg');">
-		<div class="container-data">
-			<p class="eyebrow">A little celebration from BonTech</p>
-			<h1 id="msg" aria-live="polite">Happy Birthday, Bonheur</h1>
-			<p class="intro">Leave a warm message and add a little more joy to the celebration.</p>
+	<main class="page-shell">
+		<section class="birthday-card" aria-labelledby="msg">
+			<figure class="birthday-photo">
+				<img src="image/image1.jpg" alt="Bonheur celebrating a birthday">
+				<figcaption>Today is all about you</figcaption>
+			</figure>
 
+			<div class="message-overlay">
+				<p class="eyebrow">A little celebration from BonTech</p>
+				<h1 id="msg" aria-live="polite">Happy Birthday, Bonheur</h1>
+				<p class="intro">Make a wish. Make it bright.</p>
+			</div>
+		</section>
+
+		<section class="wishes" aria-labelledby="wishes-title">
+			<div class="section-heading">
+				<h2 id="wishes-title">From everyone wishing you well</h2>
+				<span id="wish-count">0</span>
+			</div>
+			<div class="wish-ticker" aria-live="polite">
+				<p class="wish-ticker-text" id="wish-ticker-text">Your birthday wishes will appear here.</p>
+			</div>
+			<ul class="wish-list" id="wish-list" aria-label="All birthday wishes"></ul>
+		</section>
+
+		<section class="wish-panel" id="wish-panel" hidden aria-labelledby="send-title">
+			<div>
+				<p class="eyebrow">Your turn</p>
+				<h2 id="send-title">Send a wish</h2>
+			</div>
 			<form class="wish-form" id="wish-form">
-				<label for="wish-input">Your birthday wish</label>
+				<label for="wish-input">Your message</label>
 				<div class="form-row">
 					<input id="wish-input" name="wish" type="text" maxlength="140" placeholder="Write something lovely..." autocomplete="off" required>
-					<button type="submit">Send wish <span aria-hidden="true">&#8594;</span></button>
+					<button type="submit">Send <span aria-hidden="true">&#8594;</span></button>
 				</div>
 				<p class="form-status" id="form-status" role="status"></p>
 			</form>
-
-			<section class="wishes" aria-labelledby="wishes-title">
-				<div class="section-heading">
-					<h2 id="wishes-title">Birthday wishes</h2>
-					<span id="wish-count">0</span>
-				</div>
-				<ul class="wish-list" id="wish-list"></ul>
-			</section>
-		</div>
+		</section>
 	</main>
 
 	<footer class="float" id="float">Bonheur@BonTech</footer>
+	<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 	<script src="script.js"></script>
 </body>
