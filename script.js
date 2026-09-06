@@ -1,9 +1,12 @@
 const wishForm = document.querySelector("#wish-form");
+const wishName = document.querySelector("#wish-name");
 const wishInput = document.querySelector("#wish-input");
 const wishPanel = document.querySelector("#wish-panel");
 const wishList = document.querySelector("#wish-list");
 const wishCount = document.querySelector("#wish-count");
 const tickerText = document.querySelector("#wish-ticker-text");
+const wishAuthor = document.querySelector("#wish-author");
+const wishMessage = document.querySelector("#wish-message");
 const formStatus = document.querySelector("#form-status");
 const toast = document.querySelector("#toast");
 const storageKey = "bonheur-birthday-wishes";
@@ -22,7 +25,9 @@ let tickerTimer;
 function loadWishes() {
 	try {
 		const savedWishes = JSON.parse(localStorage.getItem(storageKey));
-		return Array.isArray(savedWishes) ? savedWishes.filter(Boolean).slice(0, 20) : [];
+		return Array.isArray(savedWishes)
+			? savedWishes.map((wish) => typeof wish === "string" ? { name: "A friend", message: wish } : wish).filter((wish) => wish?.name && wish?.message).slice(0, 20)
+			: [];
 	} catch {
 		return [];
 	}
@@ -39,9 +44,16 @@ function getTickerWishes() {
 }
 function showNextWish() {
 	const availableWishes = getTickerWishes();
+	const currentWish = availableWishes[tickerIndex % availableWishes.length];
 	tickerText.classList.remove("is-changing");
 	void tickerText.offsetWidth;
-	tickerText.textContent = availableWishes[tickerIndex % availableWishes.length];
+	if (typeof currentWish === "string") {
+		wishAuthor.textContent = "Birthday friends";
+		wishMessage.textContent = currentWish;
+	} else {
+		wishAuthor.textContent = currentWish.name;
+		wishMessage.textContent = currentWish.message;
+	}
 	tickerText.classList.add("is-changing");
 	tickerIndex += 1;
 }
@@ -56,7 +68,7 @@ function renderWishes() {
 	wishList.replaceChildren();
 	wishes.forEach((wish) => {
 		const wishItem = document.createElement("li");
-		wishItem.textContent = wish;
+		wishItem.textContent = `${wish.name}: ${wish.message}`;
 		wishList.append(wishItem);
 	});
 	wishCount.textContent = wishes.length;
@@ -70,15 +82,16 @@ function showThankYou() {
 
 wishForm.addEventListener("submit", (event) => {
 	event.preventDefault();
+	const name = wishName.value.trim();
 	const wish = wishInput.value.trim();
 
-	if (!wish) {
-		formStatus.textContent = "Please write a wish first.";
-		wishInput.focus();
+	if (!name || !wish) {
+		formStatus.textContent = "Please add your name and wish.";
+		(name ? wishInput : wishName).focus();
 		return;
 	}
 
-	wishes = [wish, ...wishes].slice(0, 20);
+	wishes = [{ name, message: wish }, ...wishes].slice(0, 20);
 	saveWishes();
 	renderWishes();
 	tickerIndex = 0;

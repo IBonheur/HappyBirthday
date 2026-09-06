@@ -222,6 +222,24 @@ body {
 	text-wrap: balance;
 }
 
+.wish-author,
+.wish-message {
+	display: block;
+}
+
+.wish-author {
+	margin-bottom: 0.18rem;
+	color: var(--gold);
+	font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+	font-size: 0.68rem;
+	letter-spacing: 0.08em;
+	text-transform: uppercase;
+}
+
+.wish-message {
+	color: var(--ink);
+}
+
 .wish-ticker-text.is-changing { animation: ticker-change 650ms ease both; }
 .wish-list { display: none; }
 
@@ -275,6 +293,10 @@ body {
 	padding: 0 0.85rem;
 	color: var(--night);
 	background: var(--ink);
+}
+
+.wish-form input::placeholder {
+	color: #6b6370;
 }
 
 .wish-form button {
@@ -332,7 +354,7 @@ body {
 
 @keyframes card-in { from { opacity: 0; transform: translateY(1rem) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
 @keyframes panel-in { from { opacity: 0; transform: translateY(0.5rem); } to { opacity: 1; transform: translateY(0); } }
-@keyframes ticker-change { from { opacity: 0; transform: translateY(0.8rem); } to { opacity: 1; transform: translateY(0); } }
+@keyframes ticker-change { from { opacity: 0; transform: translateX(2.5rem); } to { opacity: 1; transform: translateX(0); } }
 @keyframes glow-drift { from { transform: translateX(-2%) scale(0.96); } to { transform: translateX(2%) scale(1.04); } }
 @keyframes twinkle { 0%, 100% { opacity: 0.5; transform: rotate(-2deg); } 50% { opacity: 1; transform: rotate(2deg); } }
 @keyframes float-around { 0%, 100% { transform: translate(0, 0) rotate(-8deg); } 33% { transform: translate(1.4rem, -1.2rem) rotate(8deg); } 66% { transform: translate(-1rem, 1rem) rotate(18deg); } }
@@ -357,5 +379,107 @@ body {
 		animation-duration: 0.01ms !important;
 		animation-iteration-count: 1 !important;
 		scroll-behavior: auto !important;
+	}
+}
+
+/* Final image-first layout overrides */
+body {
+	overflow: hidden;
+	background: #120d24;
+}
+
+.page-shell {
+	width: min(94vw, 64rem);
+	max-height: calc(100dvh - 2rem);
+	grid-template-rows: minmax(0, 1fr) auto auto;
+}
+
+.birthday-card {
+	min-height: 0;
+	height: clamp(17rem, 62dvh, 42rem);
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.birthday-photo img {
+	object-fit: contain;
+}
+
+.message-overlay {
+	background: rgba(18, 13, 36, 0.16);
+	backdrop-filter: blur(3px);
+	-webkit-backdrop-filter: blur(3px);
+}
+
+.wishes {
+	min-width: 0;
+}
+
+.wish-ticker {
+	width: 100%;
+	min-height: clamp(2.75rem, 6vh, 4rem);
+}
+
+.wish-panel:not([hidden]) {
+	max-height: 10rem;
+}
+
+.form-fields {
+	display: grid;
+	grid-template-columns: minmax(7rem, 0.65fr) minmax(0, 1.35fr);
+	gap: 0.5rem;
+	margin-bottom: 0.5rem;
+}
+
+.form-fields input {
+	width: 100%;
+}
+
+.form-row {
+	justify-content: flex-end;
+}
+
+.form-row button {
+	min-width: 5rem;
+}
+
+.toast {
+	bottom: max(1rem, env(safe-area-inset-bottom));
+}
+
+@media (max-width: 600px) {
+	.page-shell {
+		width: min(94vw, 30rem);
+		max-height: calc(100dvh - 1.5rem);
+	}
+
+	.birthday-card {
+		height: clamp(15rem, 55dvh, 32rem);
+	}
+
+	.message-overlay {
+		padding: 0.8rem;
+	}
+
+	.form-fields {
+		grid-template-columns: 1fr 1.5fr;
+	}
+}
+
+@media (max-height: 560px) {
+	.page-shell {
+		gap: 0.5rem;
+		max-height: calc(100dvh - 1rem);
+	}
+
+	.birthday-card {
+		height: 48dvh;
+	}
+
+	.message-overlay {
+		margin-bottom: 0.6rem;
+	}
+
+	.wish-panel:not([hidden]) {
+		padding: 0.6rem;
 	}
 }
