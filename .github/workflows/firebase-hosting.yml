@@ -30,4 +30,4 @@ jobs:
       - name: Deploy Hosting and Firestore rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
-        run: npx --yes firebase-tools@latest deploy --project happybirthday-6d8ee --only hosting,firestore:rules
+        run: npx --yes firebase-tools@latest deploy --project happybirthday-6d8ee --only hosting,functions,firestore:rules

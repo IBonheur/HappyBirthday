@@ -2,6 +2,9 @@
 	"firestore": {
 		"rules": "firestore.rules"
 	},
+	"functions": {
+		"source": "functions"
+	},
 	"hosting": {
 		"site": "happybirthday-6d8ee",
 		"public": ".",
@@ -12,9 +15,36 @@
 			".git/**",
 			".github/**",
 			"README.md",
+			"functions/**",
 			"Birthday-Wishishes/**"
 		],
+		"rewrites": [
+			{
+				"source": "/api/**",
+				"function": {
+					"functionId": "wishesApi",
+					"region": "us-central1"
+				}
+			}
+		],
 		"headers": [
+			{
+				"source": "**",
+				"headers": [
+					{
+						"key": "X-Content-Type-Options",
+						"value": "nosniff"
+					},
+					{
+						"key": "Referrer-Policy",
+						"value": "strict-origin-when-cross-origin"
+					},
+					{
+						"key": "Content-Security-Policy",
+						"value": "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'"
+					}
+				]
+			},
 			{
 				"source": "**/*.@(js|css)",
 				"headers": [

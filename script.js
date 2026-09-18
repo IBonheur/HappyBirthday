@@ -1,7 +1,3 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-import { addDoc, collection, getDocs, getFirestore, limit, orderBy, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { firebaseConfig } from "./firebase-config.js";
-
 const wishForm = document.querySelector("#wish-form");
 const birthdayImage = document.querySelector("#birthday-image");
 const wishName = document.querySelector("#wish-name");
@@ -16,8 +12,9 @@ const formStatus = document.querySelector("#form-status");
 const toast = document.querySelector("#toast");
 const privacyScreen = document.querySelector(".privacy-screen");
 const storageKey = "bonheur-birthday-wishes";
-const revealDelay = 20000;
-const imageChangeDelay = 40000;
+const pendingStorageKey = "bonheur-pending-wishes";
+const revealDelay = 10000;
+const imageChangeDelay = 30000;
 const starterWishes = [
 	"Wishing you a year full of bright moments!",
 	"May your birthday be as wonderful as you are.",
@@ -29,10 +26,9 @@ const fallbackImage = birthdayImages[0];
 const blockedShortcuts = new Set(["s", "u", "p"]);
 const backgroundScenes = ["scene-balloons", "scene-cakes", "scene-hearts"];
 const background = document.querySelector(".body-bg");
-const wishesCollection = "birthdayWishes";
 
 let wishes = loadWishes();
-let firestore;
+let pendingWishes = loadPendingWishes();
 let tickerIndex = 0;
 let tickerTimer;
 let imageIndex = 0;
@@ -59,56 +55,37 @@ function normalizeWish(wish) {
 	return null;
 }
 
-function isFirebaseConfigured() {
-	return Object.values(firebaseConfig).every((value) => typeof value === "string" && value.trim() && !value.startsWith("PASTE_"));
-}
-
-function initializeCloudStorage() {
-	if (!isFirebaseConfigured()) {
-		formStatus.textContent = "Cloud wishes are not configured yet.";
-		return null;
-	}
-
-	try {
-		const app = initializeApp(firebaseConfig);
-		return getFirestore(app);
-	} catch (error) {
-		console.error("Firebase initialization failed.", error);
-		formStatus.textContent = "Cloud wishes are temporarily unavailable.";
-		return null;
-	}
-}
-
 async function loadCloudWishes() {
-	if (!firestore) {
-		return;
-	}
-
 	try {
-		const wishesQuery = query(collection(firestore, wishesCollection), orderBy("createdAt", "desc"), limit(50));
-		const snapshot = await getDocs(wishesQuery);
-		wishes = snapshot.docs.map((wish) => normalizeWish(wish.data())).filter(Boolean);
+		const response = await fetch("/api/wishes", { headers: { Accept: "application/json" } });
+		if (!response.ok) {
+			throw new Error(`Wish loading failed with status ${response.status}`);
+		}
+
+		const data = await response.json();
+		wishes = Array.isArray(data.wishes) ? data.wishes.map(normalizeWish).filter(Boolean) : [];
 		saveWishes();
 		renderWishes();
 		tickerIndex = 0;
 		showNextWish();
-		formStatus.textContent = "Cloud wishes are connected.";
 	} catch (error) {
 		console.error("Could not load cloud wishes.", error);
-		formStatus.textContent = "Cloud wishes could not be loaded. Local wishes are still available.";
+		formStatus.textContent = "";
 	}
 }
 
 async function saveCloudWish(wish) {
-	if (!firestore) {
-		return false;
-	}
-
-	await addDoc(collection(firestore, wishesCollection), {
-		name: wish.name,
-		message: wish.message,
-		createdAt: serverTimestamp()
+	const response = await fetch("/api/wishes", {
+		method: "POST",
+		headers: {
+			Accept: "application/json",
+			"Content-Type": "application/json"
+		},
+		body: JSON.stringify(wish)
 	});
+	if (!response.ok) {
+		throw new Error(`Wish save failed with status ${response.status}`);
+	}
 	return true;
 }
 
@@ -136,6 +113,41 @@ function loadWishes() {
 		return [];
 	}
 }
+
+function loadPendingWishes() {
+	try {
+		const savedWishes = JSON.parse(localStorage.getItem(pendingStorageKey));
+		return Array.isArray(savedWishes) ? savedWishes.map(normalizeWish).filter(Boolean).slice(0, 20) : [];
+	} catch {
+		return [];
+	}
+}
+
+function savePendingWishes() {
+	try {
+		localStorage.setItem(pendingStorageKey, JSON.stringify(pendingWishes));
+	} catch {
+		return;
+	}
+}
+
+async function flushPendingWishes() {
+	if (!pendingWishes.length) {
+		return;
+	}
+
+	const remainingWishes = [];
+	for (const pendingWish of pendingWishes) {
+		try {
+			await saveCloudWish(pendingWish);
+		} catch {
+			remainingWishes.push(pendingWish);
+		}
+	}
+	pendingWishes = remainingWishes;
+	savePendingWishes();
+}
+
 function saveWishes() {
 	try {
 		localStorage.setItem(storageKey, JSON.stringify(wishes));
@@ -224,22 +236,16 @@ wishForm.addEventListener("submit", async (event) => {
 
 	const newWish = { name, message: wish };
 	submitButton.disabled = true;
-	formStatus.textContent = "Saving your wish...";
+	formStatus.textContent = "";
 
 	try {
-		const savedToCloud = await saveCloudWish(newWish);
+		await saveCloudWish(newWish);
 		wishes = [newWish, ...wishes].slice(0, 50);
-		if (!savedToCloud) {
-			saveWishes();
-			formStatus.textContent = "Wish saved on this device. Configure Firebase for shared wishes.";
-		} else {
-			formStatus.textContent = "Wish added to the birthday wall.";
-		}
+		formStatus.textContent = "";
 	} catch (error) {
 		console.error("Could not save cloud wish.", error);
-		wishes = [newWish, ...wishes].slice(0, 50);
-		saveWishes();
-		formStatus.textContent = "Cloud save failed. Your wish was saved on this device.";
+		pendingWishes = [newWish, ...pendingWishes].slice(0, 20);
+		savePendingWishes();
 	}
 
 	renderWishes();
@@ -256,12 +262,12 @@ function changeBackgroundScene() {
 	background.classList.add(backgroundScenes[sceneIndex]);
 }
 
-firestore = initializeCloudStorage();
 renderWishes();
 startTicker();
 startImageRotation();
 startSceneRotation();
 loadCloudWishes();
+flushPendingWishes();
 window.setTimeout(() => {
 	wishPanel.hidden = false;
 	wishInput.focus({ preventScroll: true });

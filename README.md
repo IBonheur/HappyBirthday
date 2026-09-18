@@ -10,10 +10,11 @@ Open `index.html` through a local static server such as VS Code Live Server. ES 
 
 1. Create a Firebase project at https://console.firebase.google.com/.
 2. Create a Firestore database.
-3. Register a Web app and copy its configuration into `firebase-config.js`.
-4. Deploy `firestore.rules` in the Firebase Console under Firestore Database > Rules.
+3. Deploy the `functions` directory and `firestore.rules` with Firebase CLI.
 
-The Firebase web configuration is not a private server secret. Firestore Security Rules are the protection that limits what visitors can write.
+All Firestore access runs through the backend Cloud Function. No Firebase Admin credential, service-account key, GitHub token, or database authority is shipped to the browser. Each wish gets a deterministic ID, is stored once in Firestore, and is backed up to one JSON file in GitHub. Failed GitHub backups remain pending in Firestore and are retried automatically every 15 minutes. Hosting excludes the backend source from public files, and the API validates origins, input lengths, and write frequency.
+
+The backend requires the Firebase runtime secret `GITHUB_BACKUP_TOKEN`, with permission to write repository contents in `IBonheur/HappyBirthday`. Configure it with Firebase Secret Manager before deploying the function, for example with `firebase functions:secrets:set GITHUB_BACKUP_TOKEN`. The browser never receives this token.
 
 ## Connect GitHub to Firebase Hosting
 
@@ -33,8 +34,10 @@ The existing GitHub Pages address can continue to work separately, but Firebase 
 
 ## Behavior
 
-- Wishes are stored in the Firestore `birthdayWishes` collection and loaded for every visitor.
-- If Firebase is not configured or temporarily unavailable, wishes fall back to this browser's `localStorage` under `bonheur-birthday-wishes`.
+- Wishes are stored once in the Firestore `birthdayWishes` collection and loaded for every visitor.
+- Every wish uses a deterministic SHA-256 ID, so repeated submits of the same name and message do not create duplicate records.
+- Each Firestore wish is mirrored to one deterministic JSON file under `backups/wishes/` in GitHub.
+- If the backend is temporarily unavailable, the browser keeps a silent local retry queue under `bonheur-pending-wishes`; visitors are not shown backend or storage errors.
 - The photo and background scene rotate while the page is visible.
 - Animations pause when the tab is hidden and resume when it becomes visible again.
 - The privacy screen masks the page when the browser tab or window loses visibility.
