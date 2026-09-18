@@ -75,8 +75,7 @@ async function loadCloudWishes() {
 		renderWishes();
 		tickerIndex = 0;
 		showNextWish();
-	} catch (error) {
-		console.error("Could not load cloud wishes.", error);
+	} catch {
 		formStatus.textContent = "";
 	}
 }
@@ -257,8 +256,7 @@ wishForm.addEventListener("submit", async (event) => {
 		await saveCloudWish(newWish);
 		wishes = [newWish, ...wishes].slice(0, 50);
 		formStatus.textContent = "";
-	} catch (error) {
-		console.error("Could not save cloud wish.", error);
+	} catch {
 		pendingWishes = [newWish, ...pendingWishes].slice(0, 20);
 		savePendingWishes();
 	}

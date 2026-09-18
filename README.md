@@ -1,45 +1,31 @@
+
 # HappyBirthday
 
-A responsive birthday greeting page for Bonheur with rotating photos, animated scenes, and a shared Firestore wish wall.
+Responsive birthday page for Bonheur with rotating photos, animated scenes, and a protected shared wish wall.
 
-## Run locally
+## Architecture
 
-Open `index.html` through a local static server such as VS Code Live Server. ES modules and Firebase require HTTP(S), so opening the file directly with `file://` may not load the app correctly.
+- The browser sends wishes only to `/api/wishes`.
+- Firebase Cloud Functions validate and store wishes in Firestore.
+- Each wish uses a deterministic SHA-256 document ID, preventing duplicate records for the same normalized name and message.
+- The backend mirrors each wish to `backups/wishes/<id>.json` in the GitHub repository.
+- Failed GitHub backups remain pending in Firestore and are retried every 15 minutes.
+- Firestore rules deny direct browser access; only the Admin SDK in Cloud Functions can read or write data.
+- GitHub and Firebase credentials are backend secrets and never appear in frontend files.
 
-## Configure Firebase
+## Deployment
 
-1. Create a Firebase project at https://console.firebase.google.com/.
-2. Create a Firestore database.
-3. Deploy the `functions` directory and `firestore.rules` with Firebase CLI.
+1. Create or select Firebase project `happybirthday-6d8ee`.
+2. Set the backend secret with `firebase functions:secrets:set GITHUB_BACKUP_TOKEN`. The token needs repository contents write permission for `IBonheur/HappyBirthday`.
+3. Add the Firebase service-account JSON as the GitHub Actions secret `FIREBASE_SERVICE_ACCOUNT_HAPPYBIRTHDAY_6D8EE`.
+4. Push to `main` or run the `Deploy to Firebase Hosting` workflow.
 
-All Firestore access runs through the backend Cloud Function. No Firebase Admin credential, service-account key, GitHub token, or database authority is shipped to the browser. Each wish gets a deterministic ID, is stored once in Firestore, and is backed up to one JSON file in GitHub. Failed GitHub backups remain pending in Firestore and are retried automatically every 15 minutes. Hosting excludes the backend source from public files, and the API validates origins, input lengths, and write frequency.
+The deployment includes Hosting, Cloud Functions, and Firestore rules. The public sites are https://happybirthday-6d8ee.web.app/ and https://happybirthday-6d8ee.firebaseapp.com/.
 
-The backend requires the Firebase runtime secret `GITHUB_BACKUP_TOKEN`, with permission to write repository contents in `IBonheur/HappyBirthday`. Configure it with Firebase Secret Manager before deploying the function, for example with `firebase functions:secrets:set GITHUB_BACKUP_TOKEN`. The browser never receives this token.
+## Local development
 
-## Connect GitHub to Firebase Hosting
+Serve the root directory through HTTP, for example with VS Code Live Server. Opening the page with `file://` does not provide the same Hosting rewrite behavior as Firebase.
 
-This repository is configured for Firebase project `happybirthday-6d8ee` and Hosting site `happybirthday-6d8ee`.
+## Privacy limitation
 
-1. In Firebase Console, open Project settings > Service accounts and create a private key.
-2. In GitHub, open the repository Settings > Secrets and variables > Actions.
-3. Add a repository secret named `FIREBASE_SERVICE_ACCOUNT_HAPPYBIRTHDAY_6D8EE` containing the complete service-account JSON.
-4. Push to `main` or run the `Deploy to Firebase Hosting` workflow manually.
-
-The workflow deploys the root page to:
-
-- https://happybirthday-6d8ee.web.app/
-- https://happybirthday-6d8ee.firebaseapp.com/
-
-The existing GitHub Pages address can continue to work separately, but Firebase Hosting becomes the deployment target for pushes to `main`.
-
-## Behavior
-
-- Wishes are stored once in the Firestore `birthdayWishes` collection and loaded for every visitor.
-- Every wish uses a deterministic SHA-256 ID, so repeated submits of the same name and message do not create duplicate records.
-- Each Firestore wish is mirrored to one deterministic JSON file under `backups/wishes/` in GitHub.
-- If the backend is temporarily unavailable, the browser keeps a silent local retry queue under `bonheur-pending-wishes`; visitors are not shown backend or storage errors.
-- The photo and background scene rotate while the page is visible.
-- Animations pause when the tab is hidden and resume when it becomes visible again.
-- The privacy screen masks the page when the browser tab or window loses visibility.
-
-Browser privacy limitation: a normal website cannot block operating-system screenshots, screen recording, or external cameras. Full capture prevention requires a native or managed application environment.
+The page masks itself when the browser reports blur, hidden visibility, page exit, or print preview. A normal website cannot block operating-system screenshots, screen recording, GPU capture, or external cameras. Full capture prevention requires a native or managed application.

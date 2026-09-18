@@ -63,6 +63,10 @@ function getWishId(wish) {
 	return crypto.createHash("sha256").update(`${wish.name}\n${wish.message}`).digest("hex");
 }
 
+function getBackupWish(wish) {
+	return { name: wish.name, message: wish.message };
+}
+
 function getGitHubHeaders() {
 	const token = githubBackupToken.value();
 	return token
@@ -71,6 +75,7 @@ function getGitHubHeaders() {
 }
 
 async function backupWishToGitHub(wish, wishId) {
+	wish = getBackupWish(wish);
 	const headers = getGitHubHeaders();
 	if (!headers) {
 		throw new Error("GitHub backup is not configured.");
@@ -132,7 +137,7 @@ async function saveWish(wish) {
 			await backupWishToGitHub(wish, wishId);
 			await wishReference.update({ backupStatus: "complete", backupUpdatedAt: FieldValue.serverTimestamp() });
 		} catch (error) {
-			console.error(`GitHub backup pending for wish ${wishId}.`, error);
+			console.error("GitHub backup is pending.", { wishId });
 		}
 	}
 
@@ -147,7 +152,7 @@ async function retryPendingBackups() {
 			await backupWishToGitHub(wish, document.id);
 			await document.ref.update({ backupStatus: "complete", backupUpdatedAt: FieldValue.serverTimestamp() });
 		} catch (error) {
-			console.error(`GitHub backup retry pending for wish ${document.id}.`, error);
+			console.error("GitHub backup retry is pending.", { wishId: document.id });
 		}
 	}
 }
