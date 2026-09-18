@@ -432,7 +432,7 @@ body {
 
 @media (min-width: 800px) {
 	.birthday-card {
-		grid-template-columns: minmax(0, 1.35fr) minmax(16rem, 0.65fr);
+		grid-template-columns: minmax(0, 1.7fr) minmax(15rem, 0.55fr);
 		place-items: stretch;
 		padding: clamp(1rem, 2vw, 1.5rem);
 		gap: clamp(1rem, 3vw, 2rem);
@@ -447,8 +447,11 @@ body {
 	}
 
 	.birthday-photo img {
+		width: auto;
+		height: 100%;
 		max-width: 100%;
 		max-height: 100%;
+		object-fit: contain;
 	}
 
 	.message-overlay {
