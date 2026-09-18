@@ -447,8 +447,9 @@ body {
 	}
 
 	.birthday-photo img {
-		width: auto;
+		width: 100%;
 		height: 100%;
+		min-width: 0;
 		max-width: 100%;
 		max-height: 100%;
 		object-fit: contain;
