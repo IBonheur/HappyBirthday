@@ -21,6 +21,7 @@ const starterWishes = [
 	"Cheers to your happiest year yet!"
 ];
 const birthdayImages = ["image/image1.jpg", "image/image2.jpg"];
+const fallbackImage = birthdayImages[0];
 const blockedShortcuts = new Set(["s", "u", "p"]);
 const backgroundScenes = ["scene-balloons", "scene-cakes", "scene-hearts"];
 const background = document.querySelector(".body-bg");
@@ -36,6 +37,20 @@ let sceneTimer;
 function setPrivacyMode(enabled) {
 	document.body.classList.toggle("privacy-mode", enabled);
 	privacyScreen.setAttribute("aria-hidden", String(!enabled));
+}
+
+function normalizeWish(wish) {
+	if (typeof wish === "string" && wish.trim()) {
+		return { name: "A friend", message: wish.trim() };
+	}
+
+	if (wish && typeof wish.name === "string" && typeof wish.message === "string") {
+		const name = wish.name.trim();
+		const message = wish.message.trim();
+		return name && message ? { name, message } : null;
+	}
+
+	return null;
 }
 
 document.addEventListener("contextmenu", (event) => event.preventDefault());
@@ -56,7 +71,7 @@ function loadWishes() {
 	try {
 		const savedWishes = JSON.parse(localStorage.getItem(storageKey));
 		return Array.isArray(savedWishes)
-			? savedWishes.map((wish) => typeof wish === "string" ? { name: "A friend", message: wish } : wish).filter((wish) => wish?.name && wish?.message).slice(0, 20)
+			? savedWishes.map(normalizeWish).filter(Boolean).slice(0, 20)
 			: [];
 	} catch {
 		return [];
@@ -100,6 +115,15 @@ function rotateBirthdayImage() {
 	birthdayImage.addEventListener("animationend", () => birthdayImage.classList.remove("is-changing"), { once: true });
 	birthdayImage.src = birthdayImages[imageIndex];
 }
+
+birthdayImage.addEventListener("error", () => {
+	if (birthdayImage.src.endsWith(fallbackImage)) {
+		return;
+	}
+
+	imageIndex = 0;
+	birthdayImage.src = fallbackImage;
+});
 
 function startImageRotation() {
 	window.clearInterval(imageTimer);
