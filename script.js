@@ -10,6 +10,7 @@ const wishAuthor = document.querySelector("#wish-author");
 const wishMessage = document.querySelector("#wish-message");
 const formStatus = document.querySelector("#form-status");
 const toast = document.querySelector("#toast");
+const privacyScreen = document.querySelector(".privacy-screen");
 const storageKey = "bonheur-birthday-wishes";
 const revealDelay = 20000;
 const imageChangeDelay = 40000;
@@ -30,6 +31,12 @@ let tickerTimer;
 let imageIndex = 0;
 let imageTimer;
 let sceneIndex = 0;
+let sceneTimer;
+
+function setPrivacyMode(enabled) {
+	document.body.classList.toggle("privacy-mode", enabled);
+	privacyScreen.setAttribute("aria-hidden", String(!enabled));
+}
 
 document.addEventListener("contextmenu", (event) => event.preventDefault());
 document.addEventListener("dragstart", (event) => event.preventDefault());
@@ -94,6 +101,16 @@ function rotateBirthdayImage() {
 	birthdayImage.src = birthdayImages[imageIndex];
 }
 
+function startImageRotation() {
+	window.clearInterval(imageTimer);
+	imageTimer = window.setInterval(rotateBirthdayImage, imageChangeDelay);
+}
+
+function startSceneRotation() {
+	window.clearInterval(sceneTimer);
+	sceneTimer = window.setInterval(changeBackgroundScene, 12000);
+}
+
 function renderWishes() {
 	wishList.replaceChildren();
 	wishes.forEach((wish) => {
@@ -139,8 +156,8 @@ function changeBackgroundScene() {
 
 renderWishes();
 startTicker();
-imageTimer = window.setInterval(rotateBirthdayImage, imageChangeDelay);
-window.setInterval(changeBackgroundScene, 12000);
+startImageRotation();
+startSceneRotation();
 window.setTimeout(() => {
 	wishPanel.hidden = false;
 	wishInput.focus({ preventScroll: true });
@@ -148,10 +165,21 @@ window.setTimeout(() => {
 
 document.addEventListener("visibilitychange", () => {
 	if (document.hidden) {
+		setPrivacyMode(true);
 		window.clearInterval(tickerTimer);
 		window.clearInterval(imageTimer);
+		window.clearInterval(sceneTimer);
 	} else {
+		setPrivacyMode(false);
 		startTicker();
-		imageTimer = window.setInterval(rotateBirthdayImage, imageChangeDelay);
+		startImageRotation();
+		startSceneRotation();
+	}
+});
+
+window.addEventListener("blur", () => setPrivacyMode(true));
+window.addEventListener("focus", () => {
+	if (!document.hidden) {
+		setPrivacyMode(false);
 	}
 });
