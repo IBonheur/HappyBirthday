@@ -40,10 +40,18 @@ body {
 	background: var(--night);
 }
 
+body.privacy-mode {
+	background: #000;
+}
+
+body.privacy-mode > :not(.privacy-screen) {
+	visibility: hidden;
+}
+
 .privacy-screen {
 	position: fixed;
 	inset: 0;
-	z-index: 20;
+	z-index: 2147483647;
 	display: grid;
 	place-items: center;
 	padding: 2rem;
@@ -60,6 +68,23 @@ body {
 body.privacy-mode .privacy-screen {
 	opacity: 1;
 	visibility: visible;
+}
+
+@media print {
+	html,
+	body {
+	background: #000 !important;
+}
+
+body > :not(.privacy-screen) {
+	display: none !important;
+}
+
+	body .privacy-screen {
+	display: grid !important;
+	opacity: 1 !important;
+	visibility: visible !important;
+}
 }
 
 .body-bg {

@@ -41,6 +41,13 @@ function setPrivacyMode(enabled) {
 	privacyScreen.setAttribute("aria-hidden", String(!enabled));
 }
 
+function handlePageExit() {
+	setPrivacyMode(true);
+	window.clearInterval(tickerTimer);
+	window.clearInterval(imageTimer);
+	window.clearInterval(sceneTimer);
+}
+
 function normalizeWish(wish) {
 	if (typeof wish === "string" && wish.trim()) {
 		return { name: "A friend", message: wish.trim() };
@@ -102,6 +109,14 @@ document.addEventListener("keydown", (event) => {
 		event.preventDefault();
 	}
 });
+
+window.addEventListener("beforeprint", () => setPrivacyMode(true));
+window.addEventListener("afterprint", () => {
+	if (!document.hidden && document.hasFocus()) {
+		setPrivacyMode(false);
+	}
+});
+window.addEventListener("pagehide", handlePageExit);
 
 function loadWishes() {
 	try {
@@ -275,10 +290,7 @@ window.setTimeout(() => {
 
 document.addEventListener("visibilitychange", () => {
 	if (document.hidden) {
-		setPrivacyMode(true);
-		window.clearInterval(tickerTimer);
-		window.clearInterval(imageTimer);
-		window.clearInterval(sceneTimer);
+		handlePageExit();
 	} else {
 		setPrivacyMode(false);
 		startTicker();
@@ -293,3 +305,5 @@ window.addEventListener("focus", () => {
 		setPrivacyMode(false);
 	}
 });
+
+setPrivacyMode(document.hidden || !document.hasFocus());
