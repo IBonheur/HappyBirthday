@@ -15,6 +15,22 @@ Open `index.html` through a local static server such as VS Code Live Server. ES 
 
 The Firebase web configuration is not a private server secret. Firestore Security Rules are the protection that limits what visitors can write.
 
+## Connect GitHub to Firebase Hosting
+
+This repository is configured for Firebase project `happybirthday-6d8ee` and Hosting site `happybirthday-6d8ee`.
+
+1. In Firebase Console, open Project settings > Service accounts and create a private key.
+2. In GitHub, open the repository Settings > Secrets and variables > Actions.
+3. Add a repository secret named `FIREBASE_SERVICE_ACCOUNT_HAPPYBIRTHDAY_6D8EE` containing the complete service-account JSON.
+4. Push to `main` or run the `Deploy to Firebase Hosting` workflow manually.
+
+The workflow deploys the root page to:
+
+- https://happybirthday-6d8ee.web.app/
+- https://happybirthday-6d8ee.firebaseapp.com/
+
+The existing GitHub Pages address can continue to work separately, but Firebase Hosting becomes the deployment target for pushes to `main`.
+
 ## Behavior
 
 - Wishes are stored in the Firestore `birthdayWishes` collection and loaded for every visitor.

@@ -1,0 +1,29 @@
+{
+	"firestore": {
+		"rules": "firestore.rules"
+	},
+	"hosting": {
+		"site": "happybirthday-6d8ee",
+		"public": ".",
+		"ignore": [
+			"firebase.json",
+			"firestore.rules",
+			".firebaserc",
+			".git/**",
+			".github/**",
+			"README.md",
+			"Birthday-Wishishes/**"
+		],
+		"headers": [
+			{
+				"source": "**/*.@(js|css)",
+				"headers": [
+					{
+						"key": "Cache-Control",
+						"value": "no-cache"
+					}
+				]
+			}
+		]
+	}
+}
