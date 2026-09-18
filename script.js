@@ -1,3 +1,7 @@
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { addDoc, collection, getDocs, getFirestore, limit, orderBy, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { firebaseConfig } from "./firebase-config.js";
+
 const wishForm = document.querySelector("#wish-form");
 const birthdayImage = document.querySelector("#birthday-image");
 const wishName = document.querySelector("#wish-name");
@@ -25,8 +29,10 @@ const fallbackImage = birthdayImages[0];
 const blockedShortcuts = new Set(["s", "u", "p"]);
 const backgroundScenes = ["scene-balloons", "scene-cakes", "scene-hearts"];
 const background = document.querySelector(".body-bg");
+const wishesCollection = "birthdayWishes";
 
 let wishes = loadWishes();
+let firestore;
 let tickerIndex = 0;
 let tickerTimer;
 let imageIndex = 0;
@@ -47,10 +53,63 @@ function normalizeWish(wish) {
 	if (wish && typeof wish.name === "string" && typeof wish.message === "string") {
 		const name = wish.name.trim();
 		const message = wish.message.trim();
-		return name && message ? { name, message } : null;
+		return name && message ? { name, message, createdAt: wish.createdAt ?? null } : null;
 	}
 
 	return null;
+}
+
+function isFirebaseConfigured() {
+	return Object.values(firebaseConfig).every((value) => typeof value === "string" && value.trim() && !value.startsWith("PASTE_"));
+}
+
+function initializeCloudStorage() {
+	if (!isFirebaseConfigured()) {
+		formStatus.textContent = "Cloud wishes are not configured yet.";
+		return null;
+	}
+
+	try {
+		const app = initializeApp(firebaseConfig);
+		return getFirestore(app);
+	} catch (error) {
+		console.error("Firebase initialization failed.", error);
+		formStatus.textContent = "Cloud wishes are temporarily unavailable.";
+		return null;
+	}
+}
+
+async function loadCloudWishes() {
+	if (!firestore) {
+		return;
+	}
+
+	try {
+		const wishesQuery = query(collection(firestore, wishesCollection), orderBy("createdAt", "desc"), limit(50));
+		const snapshot = await getDocs(wishesQuery);
+		wishes = snapshot.docs.map((wish) => normalizeWish(wish.data())).filter(Boolean);
+		saveWishes();
+		renderWishes();
+		tickerIndex = 0;
+		showNextWish();
+		formStatus.textContent = "Cloud wishes are connected.";
+	} catch (error) {
+		console.error("Could not load cloud wishes.", error);
+		formStatus.textContent = "Cloud wishes could not be loaded. Local wishes are still available.";
+	}
+}
+
+async function saveCloudWish(wish) {
+	if (!firestore) {
+		return false;
+	}
+
+	await addDoc(collection(firestore, wishesCollection), {
+		name: wish.name,
+		message: wish.message,
+		createdAt: serverTimestamp()
+	});
+	return true;
 }
 
 document.addEventListener("contextmenu", (event) => event.preventDefault());
@@ -71,7 +130,7 @@ function loadWishes() {
 	try {
 		const savedWishes = JSON.parse(localStorage.getItem(storageKey));
 		return Array.isArray(savedWishes)
-			? savedWishes.map(normalizeWish).filter(Boolean).slice(0, 20)
+			? savedWishes.map(normalizeWish).filter(Boolean).slice(0, 50)
 			: [];
 	} catch {
 		return [];
@@ -151,8 +210,9 @@ function showThankYou(name) {
 	window.setTimeout(() => toast.classList.remove("is-visible"), 3200);
 }
 
-wishForm.addEventListener("submit", (event) => {
+wishForm.addEventListener("submit", async (event) => {
 	event.preventDefault();
+	const submitButton = wishForm.querySelector("button[type=submit]");
 	const name = wishName.value.trim();
 	const wish = wishInput.value.trim();
 
@@ -162,14 +222,32 @@ wishForm.addEventListener("submit", (event) => {
 		return;
 	}
 
-	wishes = [{ name, message: wish }, ...wishes].slice(0, 20);
-	saveWishes();
+	const newWish = { name, message: wish };
+	submitButton.disabled = true;
+	formStatus.textContent = "Saving your wish...";
+
+	try {
+		const savedToCloud = await saveCloudWish(newWish);
+		wishes = [newWish, ...wishes].slice(0, 50);
+		if (!savedToCloud) {
+			saveWishes();
+			formStatus.textContent = "Wish saved on this device. Configure Firebase for shared wishes.";
+		} else {
+			formStatus.textContent = "Wish added to the birthday wall.";
+		}
+	} catch (error) {
+		console.error("Could not save cloud wish.", error);
+		wishes = [newWish, ...wishes].slice(0, 50);
+		saveWishes();
+		formStatus.textContent = "Cloud save failed. Your wish was saved on this device.";
+	}
+
 	renderWishes();
 	tickerIndex = 0;
 	showNextWish();
 	wishForm.reset();
-	formStatus.textContent = "Wish added.";
 	showThankYou(name);
+	submitButton.disabled = false;
 });
 
 function changeBackgroundScene() {
@@ -178,10 +256,12 @@ function changeBackgroundScene() {
 	background.classList.add(backgroundScenes[sceneIndex]);
 }
 
+firestore = initializeCloudStorage();
 renderWishes();
 startTicker();
 startImageRotation();
 startSceneRotation();
+loadCloudWishes();
 window.setTimeout(() => {
 	wishPanel.hidden = false;
 	wishInput.focus({ preventScroll: true });
