@@ -1,3 +1,7 @@
+import { createWish, listWishes } from "./frontend/api.js";
+import { readJson, writeJson } from "./frontend/storage.js";
+import { STORAGE_KEYS, MAX_LOCAL_WISHES, MAX_PENDING_WISHES } from "./frontend/config.js";
+
 const wishForm = document.querySelector("#wish-form");
 const birthdayImage = document.querySelector("#birthday-image");
 const wishName = document.querySelector("#wish-name");
@@ -11,8 +15,8 @@ const wishMessage = document.querySelector("#wish-message");
 const formStatus = document.querySelector("#form-status");
 const toast = document.querySelector("#toast");
 const privacyScreen = document.querySelector(".privacy-screen");
-const storageKey = "bonheur-birthday-wishes";
-const pendingStorageKey = "bonheur-pending-wishes";
+const storageKey = STORAGE_KEYS.wishes;
+const pendingStorageKey = STORAGE_KEYS.pendingWishes;
 const revealDelay = 10000;
 const imageChangeDelay = 30000;
 const starterWishes = [
@@ -64,13 +68,7 @@ function normalizeWish(wish) {
 
 async function loadCloudWishes() {
 	try {
-		const response = await fetch("/api/wishes", { headers: { Accept: "application/json" } });
-		if (!response.ok) {
-			throw new Error(`Wish loading failed with status ${response.status}`);
-		}
-
-		const data = await response.json();
-		wishes = Array.isArray(data.wishes) ? data.wishes.map(normalizeWish).filter(Boolean) : [];
+		wishes = (await listWishes()).map(normalizeWish).filter(Boolean);
 		saveWishes();
 		renderWishes();
 		tickerIndex = 0;
@@ -81,18 +79,7 @@ async function loadCloudWishes() {
 }
 
 async function saveCloudWish(wish) {
-	const response = await fetch("/api/wishes", {
-		method: "POST",
-		headers: {
-			Accept: "application/json",
-			"Content-Type": "application/json"
-		},
-		body: JSON.stringify(wish)
-	});
-	if (!response.ok) {
-		throw new Error(`Wish save failed with status ${response.status}`);
-	}
-	return true;
+	await createWish(wish);
 }
 
 document.addEventListener("contextmenu", (event) => event.preventDefault());
@@ -119,10 +106,8 @@ window.addEventListener("pagehide", handlePageExit);
 
 function loadWishes() {
 	try {
-		const savedWishes = JSON.parse(localStorage.getItem(storageKey));
-		return Array.isArray(savedWishes)
-			? savedWishes.map(normalizeWish).filter(Boolean).slice(0, 50)
-			: [];
+		const savedWishes = readJson(storageKey, []);
+		return Array.isArray(savedWishes) ? savedWishes.map(normalizeWish).filter(Boolean).slice(0, MAX_LOCAL_WISHES) : [];
 	} catch {
 		return [];
 	}
@@ -130,8 +115,8 @@ function loadWishes() {
 
 function loadPendingWishes() {
 	try {
-		const savedWishes = JSON.parse(localStorage.getItem(pendingStorageKey));
-		return Array.isArray(savedWishes) ? savedWishes.map(normalizeWish).filter(Boolean).slice(0, 20) : [];
+		const savedWishes = readJson(pendingStorageKey, []);
+		return Array.isArray(savedWishes) ? savedWishes.map(normalizeWish).filter(Boolean).slice(0, MAX_PENDING_WISHES) : [];
 	} catch {
 		return [];
 	}
@@ -139,7 +124,7 @@ function loadPendingWishes() {
 
 function savePendingWishes() {
 	try {
-		localStorage.setItem(pendingStorageKey, JSON.stringify(pendingWishes));
+		writeJson(pendingStorageKey, pendingWishes);
 	} catch {
 		return;
 	}
@@ -164,7 +149,7 @@ async function flushPendingWishes() {
 
 function saveWishes() {
 	try {
-		localStorage.setItem(storageKey, JSON.stringify(wishes));
+		writeJson(storageKey, wishes);
 	} catch {
 		return;
 	}
