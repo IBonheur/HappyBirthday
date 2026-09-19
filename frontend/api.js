@@ -1,17 +1,41 @@
-import { collection, addDoc, getDocs, limit, orderBy, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { collection, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 import { db, ensureAnonymousSession } from "./firebase.js";
+import { HTTP_BACKEND_URL, USE_HTTP_BACKEND } from "./config.js";
 
 const wishesCollection = collection(db, "birthdayWishes");
 
+async function getWishId(wish) {
+	const data = new TextEncoder().encode(`${wish.name}\n${wish.message}`);
+	const digest = await crypto.subtle.digest("SHA-256", data);
+	return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
 export async function listWishes() {
+	if (USE_HTTP_BACKEND) {
+		const response = await fetch(HTTP_BACKEND_URL, { headers: { Accept: "application/json" } });
+		if (!response.ok) throw new Error(`Wish loading failed with status ${response.status}`);
+		return (await response.json()).wishes || [];
+	}
 	await ensureAnonymousSession();
 	const snapshot = await getDocs(query(wishesCollection, orderBy("createdAt", "desc"), limit(50)));
 	return snapshot.docs.map((document) => ({ id: document.id, ...document.data() }));
 }
 
 export async function createWish(wish) {
+	if (USE_HTTP_BACKEND) {
+		const response = await fetch(HTTP_BACKEND_URL, {
+			method: "POST",
+			headers: { Accept: "application/json", "Content-Type": "application/json" },
+			body: JSON.stringify(wish)
+		});
+		if (!response.ok) throw new Error(`Wish save failed with status ${response.status}`);
+		return;
+	}
 	await ensureAnonymousSession();
-	await addDoc(wishesCollection, {
+	const wishId = await getWishId(wish);
+	const wishReference = doc(wishesCollection, wishId);
+	if ((await getDoc(wishReference)).exists()) return;
+	await setDoc(wishReference, {
 		name: wish.name,
 		message: wish.message,
 		createdAt: serverTimestamp()

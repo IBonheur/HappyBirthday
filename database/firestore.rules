@@ -3,8 +3,9 @@ rules_version = '2';
 service cloud.firestore {
 	match /databases/{database}/documents {
 		match /birthdayWishes/{wishId} {
-			allow read: if request.auth != null;
-			allow create: if request.auth != null
+			allow read: if isAnonymousUser();
+			allow create: if isAnonymousUser()
+				&& wishId.matches('^[a-f0-9]{64}$')
 				&& request.resource.data.keys().hasOnly(['name', 'message', 'createdAt'])
 				&& request.resource.data.name is string
 				&& request.resource.data.name.size() > 0
@@ -15,5 +16,15 @@ service cloud.firestore {
 				&& request.resource.data.createdAt is timestamp;
 			allow update, delete: if false;
 		}
+
+		function isAnonymousUser() {
+			return request.auth != null
+				&& request.auth.token.firebase.sign_in_provider == 'anonymous';
+		}
 	}
 }
+
+// API
+// https://us-central1-happybirthday-6d8ee.cloudfunctions.net/wishesApi
+
+export const USE_HTTP_BACKEND = true;

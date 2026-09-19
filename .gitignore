@@ -1,2 +1,13 @@
-functions/node_modules/
 .firebase/
+.firebase-debug.log
+.firebaserc.local
+.firebase-local/
+.site/
+_site/
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+service-account*.json
+firebase-debug.log

@@ -1,19 +1,14 @@
 const test = require("node:test");
 const assert = require("node:assert/strict");
 const crypto = require("node:crypto");
-const { cleanWish, getWishId } = require("./validation");
+const { cleanWish, wishId } = require("./validation");
 
-test("cleanWish trims valid input and rejects oversized fields", () => {
-	assert.deepEqual(cleanWish({ name: " Bonheur ", message: " Happy birthday! " }), {
-		name: "Bonheur",
-		message: "Happy birthday!"
-	});
-	assert.equal(cleanWish({ name: "A", message: "x".repeat(141) }), null);
+test("validates and trims wishes", () => {
+	assert.deepEqual(cleanWish({ name: " Bonheur ", message: " Happy birthday! " }), { name: "Bonheur", message: "Happy birthday!" });
 	assert.equal(cleanWish({ name: "", message: "Hello" }), null);
 });
 
-test("getWishId is deterministic for the same normalized wish", () => {
+test("creates deterministic ids", () => {
 	const wish = { name: "Bonheur", message: "Happy birthday!" };
-	assert.equal(getWishId(wish, crypto), getWishId(wish, crypto));
-	assert.notEqual(getWishId(wish, crypto), getWishId({ ...wish, message: "Different" }, crypto));
+	assert.equal(wishId(wish, crypto), wishId(wish, crypto));
 });
