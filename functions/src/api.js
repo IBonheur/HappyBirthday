@@ -5,14 +5,21 @@ function createWishesApi({ repository, config, rateLimit }) {
 		response.set("Referrer-Policy", "no-referrer");
 	}
 
-	function isAllowedOrigin(request) {
+	function configureCors(request, response) {
 		const origin = request.get("origin");
-		return !origin || config.allowedOrigins.has(origin);
+		if (!origin) return true;
+		if (!config.allowedOrigins.has(origin)) return false;
+		response.set("Access-Control-Allow-Origin", origin);
+		response.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+		response.set("Access-Control-Allow-Headers", "Content-Type, Accept");
+		response.set("Vary", "Origin");
+		return true;
 	}
 
 	return async function wishesApi(request, response) {
 		setSecurityHeaders(response);
-		if (!isAllowedOrigin(request)) return response.status(403).json({ error: "Origin not allowed." });
+		if (!configureCors(request, response)) return response.status(403).json({ error: "Origin not allowed." });
+		if (request.method === "OPTIONS") return response.status(204).send("");
 
 		if (request.method === "GET") {
 			try {

@@ -1,4 +1,4 @@
-name: Deploy to Firebase Hosting
+name: Deploy Firebase free-tier rules
 
 on:
   push:
@@ -27,7 +27,7 @@ jobs:
         with:
           credentials_json: ${{ secrets['FIREBASE_SERVICE_ACCOUNT_HAPPYBIRTHDAY_6D8EE'] }}
 
-      - name: Deploy Hosting and Firestore rules
+      - name: Deploy Firestore rules only
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
-        run: npx --yes firebase-tools@latest deploy --project happybirthday-6d8ee --only hosting,functions,firestore:rules
+        run: npx --yes firebase-tools@latest deploy --project happybirthday-6d8ee --only firestore:rules

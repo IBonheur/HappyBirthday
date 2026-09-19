@@ -1,15 +1,19 @@
+import { collection, addDoc, getDocs, limit, orderBy, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { db, ensureAnonymousSession } from "./firebase.js";
+
+const wishesCollection = collection(db, "birthdayWishes");
+
 export async function listWishes() {
-	const response = await fetch("/api/wishes", { headers: { Accept: "application/json" } });
-	if (!response.ok) throw new Error(`Wish loading failed with status ${response.status}`);
-	const data = await response.json();
-	return Array.isArray(data.wishes) ? data.wishes : [];
+	await ensureAnonymousSession();
+	const snapshot = await getDocs(query(wishesCollection, orderBy("createdAt", "desc"), limit(50)));
+	return snapshot.docs.map((document) => ({ id: document.id, ...document.data() }));
 }
 
 export async function createWish(wish) {
-	const response = await fetch("/api/wishes", {
-		method: "POST",
-		headers: { Accept: "application/json", "Content-Type": "application/json" },
-		body: JSON.stringify(wish)
+	await ensureAnonymousSession();
+	await addDoc(wishesCollection, {
+		name: wish.name,
+		message: wish.message,
+		createdAt: serverTimestamp()
 	});
-	if (!response.ok) throw new Error(`Wish save failed with status ${response.status}`);
 }
