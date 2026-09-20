@@ -1,0 +1,34 @@
+name: Deploy Firebase backend
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  FIREBASE_PROJECT_ID: happybirthday-6d8ee
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install backend dependencies
+        run: npm install --prefix functions
+
+      - name: Test backend
+        run: npm test --prefix functions
+
+      - name: Authenticate with Google Cloud
+        id: auth
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+
+      - name: Deploy backend
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
+        run: npx --yes firebase-tools@latest deploy --project "$FIREBASE_PROJECT_ID" --only functions

@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-app.js";
-import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
+import { getAuth, GoogleAuthProvider, signInAnonymously, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-auth.js";
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -14,9 +14,26 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const adminEmail = "ishimwebon@gmail.com";
+const googleProvider = new GoogleAuthProvider();
 
 let authReady;
 export function ensureAnonymousSession() {
 	authReady ??= signInAnonymously(auth);
 	return authReady;
+}
+
+export function signInAsAdmin() {
+	return signInWithPopup(auth, googleProvider).then((result) => {
+		if (result.user.email?.toLowerCase() !== adminEmail) {
+			return signOut(auth).then(() => {
+				throw new Error("This Google account is not an administrator.");
+			});
+		}
+		return result.user;
+	});
+}
+
+export function isAdmin(user = auth.currentUser) {
+	return user?.email?.toLowerCase() === adminEmail;
 }

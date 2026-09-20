@@ -1,0 +1,17 @@
+project:
+  id: happybirthday-6d8ee
+  display_name: HappyBirthday
+
+hosting:
+  site: happybirthday-6d8ee
+  public_directory: .
+
+firestore:
+  rules: database/firestore.rules
+  indexes: database/firestore.indexes.json
+
+deployment:
+  workflow: .github/workflows/firebase-hosting.yaml
+  services:
+    - hosting
+    - firestore:rules

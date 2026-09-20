@@ -1,6 +1,6 @@
 const { cleanWish, wishId } = require("./validation");
 
-function createApi({ db, FieldValue, crypto, config }) {
+function createApi({ db, auth, FieldValue, crypto, config }) {
 	const attempts = new Map();
 
 	function securityHeaders(response) {
@@ -15,7 +15,7 @@ function createApi({ db, FieldValue, crypto, config }) {
 		if (!config.allowedOrigins.has(origin)) return false;
 		response.set("Access-Control-Allow-Origin", origin);
 		response.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-		response.set("Access-Control-Allow-Headers", "Accept, Content-Type");
+		response.set("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization");
 		response.set("Vary", "Origin");
 		return true;
 	}
@@ -30,6 +30,17 @@ function createApi({ db, FieldValue, crypto, config }) {
 		return false;
 	}
 
+	async function requireAdmin(request) {
+		const header = request.get("authorization") || "";
+		if (!header.startsWith("Bearer ")) return false;
+		try {
+			const user = await auth.verifyIdToken(header.slice(7));
+			return user.email_verified === true && user.email?.toLowerCase() === config.adminEmail;
+		} catch {
+			return false;
+		}
+	}
+
 	return async (request, response) => {
 		securityHeaders(response);
 		if (!cors(request, response)) return response.status(403).json({ error: "Origin not allowed." });
@@ -37,6 +48,12 @@ function createApi({ db, FieldValue, crypto, config }) {
 		const collection = db.collection("birthdayWishes");
 
 		try {
+			if (request.path === "/admin/wishes") {
+				if (!(await requireAdmin(request))) return response.status(403).json({ error: "Administrator access required." });
+				if (request.method !== "GET") return response.status(405).json({ error: "Method not allowed." });
+				const snapshot = await collection.orderBy("createdAt", "desc").limit(500).get();
+				return response.json({ wishes: snapshot.docs.map((document) => ({ id: document.id, ...document.data() })) });
+			}
 			if (request.method === "GET") {
 				const snapshot = await collection.orderBy("createdAt", "desc").limit(config.maxWishes).get();
 				return response.json({ wishes: snapshot.docs.map((document) => document.data()) });

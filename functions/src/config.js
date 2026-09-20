@@ -5,5 +5,6 @@ module.exports = {
 		"https://happybirthday-6d8ee.firebaseapp.com"
 	]),
 	maxWishes: 50,
-	maxWritesPerMinute: 5
+	maxWritesPerMinute: 5,
+	adminEmail: "ishimwebon@gmail.com"
 };
