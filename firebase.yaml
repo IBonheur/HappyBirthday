@@ -2,16 +2,17 @@ project:
   id: happybirthday-6d8ee
   display_name: HappyBirthday
 
-hosting:
-  site: happybirthday-6d8ee
-  public_directory: .
+frontend:
+  platform: github-pages
+  workflow: .github/workflows/github-pages.yaml
 
 firestore:
   rules: database/firestore.rules
   indexes: database/firestore.indexes.json
 
 deployment:
-  workflow: .github/workflows/firebase-hosting.yaml
+  data_workflow: .github/workflows/firebase-data.yaml
+  backend_workflow: .github/workflows/firebase-backend.yaml
   services:
-    - hosting
-    - firestore:rules
+    - firestore
+    - functions

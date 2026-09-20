@@ -7,6 +7,8 @@ function createApi({ db, auth, FieldValue, crypto, config }) {
 		response.set("Cache-Control", "no-store");
 		response.set("X-Content-Type-Options", "nosniff");
 		response.set("Referrer-Policy", "no-referrer");
+		response.set("Pragma", "no-cache");
+		response.set("Vary", "Origin, Authorization");
 	}
 
 	function cors(request, response) {
@@ -16,7 +18,7 @@ function createApi({ db, auth, FieldValue, crypto, config }) {
 		response.set("Access-Control-Allow-Origin", origin);
 		response.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 		response.set("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization");
-		response.set("Vary", "Origin");
+		response.set("Vary", "Origin, Authorization");
 		return true;
 	}
 

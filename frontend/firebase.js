@@ -19,6 +19,7 @@ const googleProvider = new GoogleAuthProvider();
 
 let authReady;
 export function ensureAnonymousSession() {
+	if (auth.currentUser && auth.currentUser.isAnonymous === false) return Promise.resolve(auth.currentUser);
 	authReady ??= signInAnonymously(auth);
 	return authReady;
 }

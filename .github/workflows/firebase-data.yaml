@@ -1,4 +1,4 @@
-name: Deploy Firebase Hosting
+name: Deploy Firebase data layer
 
 on:
   push:
@@ -8,10 +8,6 @@ on:
 
 permissions:
   contents: read
-
-concurrency:
-  group: firebase-production
-  cancel-in-progress: true
 
 env:
   FIREBASE_PROJECT_ID: happybirthday-6d8ee
@@ -29,7 +25,7 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Deploy Hosting and Firestore rules
+      - name: Deploy Firestore rules and indexes
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
-        run: npx --yes firebase-tools@latest deploy --project "$FIREBASE_PROJECT_ID" --only hosting,firestore:rules
+        run: npx --yes firebase-tools@latest deploy --project "$FIREBASE_PROJECT_ID" --only firestore

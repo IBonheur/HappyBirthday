@@ -3,43 +3,7 @@
 		"rules": "database/firestore.rules",
 		"indexes": "database/firestore.indexes.json"
 	},
-	"hosting": {
-		"site": "happybirthday-6d8ee",
-		"public": ".",
-		"ignore": [
-			"firebase.json",
-			"firebase.yaml",
-			"firebase-debug.log",
-			"firestore.rules",
-			".firebaserc",
-			".git/**",
-			".github/**",
-			".firebase/**",
-			"functions/**",
-			"database/**",
-			"backend/**",
-			"apis/**",
-			"Birthday-Wishishes/**",
-			"README.md",
-			"ARCHITECTURE.md"
-		],
-		"headers": [
-			{
-				"source": "**",
-				"headers": [
-					{ "key": "X-Content-Type-Options", "value": "nosniff" },
-					{ "key": "X-Frame-Options", "value": "DENY" },
-					{ "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-					{ "key": "Permissions-Policy", "value": "camera=(), microphone=(), geolocation=()" },
-					{ "key": "Content-Security-Policy", "value": "default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' https://www.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://securetoken.googleapis.com https://us-central1-happybirthday-6d8ee.cloudfunctions.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" }
-				]
-			},
-			{
-				"source": "**/*.@(js|css)",
-				"headers": [
-					{ "key": "Cache-Control", "value": "no-cache" }
-				]
-			}
-		]
+	"functions": {
+		"source": "functions"
 	}
 }
