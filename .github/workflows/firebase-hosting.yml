@@ -1,4 +1,4 @@
-name: Deploy Firebase free-tier rules
+name: Deploy Firebase Hosting
 
 on:
   push:
@@ -9,6 +9,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: firebase-production
+  cancel-in-progress: true
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -16,18 +20,13 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
       - name: Authenticate with Google Cloud
         id: auth
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Deploy Firestore rules only
+      - name: Deploy Hosting and Firestore rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
-        run: npx --yes firebase-tools@latest deploy --project happybirthday-6d8ee --only firestore:rules
+        run: npx --yes firebase-tools@latest deploy --project happybirthday-6d8ee --only hosting,firestore:rules

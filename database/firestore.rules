@@ -23,5 +23,3 @@ service cloud.firestore {
 		}
 	}
 }
-
-export const USE_HTTP_BACKEND = true;
