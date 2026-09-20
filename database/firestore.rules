@@ -24,7 +24,4 @@ service cloud.firestore {
 	}
 }
 
-// API
-// https://us-central1-happybirthday-6d8ee.cloudfunctions.net/wishesApi
-
 export const USE_HTTP_BACKEND = true;
