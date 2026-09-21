@@ -1,0 +1,6 @@
+connectorId: happybirthay
+generate:
+  adminNodeSdk:
+    - outputDir: ../../functions/src/dataconnect-admin-generated
+      package: "@dataconnect/admin-generated"
+      packageJsonDir: ../../functions

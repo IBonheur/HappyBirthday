@@ -1,0 +1,30 @@
+query GetUserGardens @auth(level: USER) {
+  gardens(where: {owner: {id: {eq_expr: "auth.uid"}}}) {
+    id
+    birthdayPersonName
+    revealDate
+    themeColor
+  }
+}
+
+query GetGardenWishes($gardenId: UUID!) @auth(level: USER) {
+  garden(id: $gardenId) {
+    wishes_on_garden {
+      id
+      messageBody
+      contentType
+      contentUrl
+      contributor {
+        displayName
+      }
+    }
+  }
+}
+
+mutation CreateWish($gardenId: UUID!, $contentType: String!, $messageBody: String) @auth(level: USER) {
+  wish_insert(data: {gardenId: $gardenId, contributorId_expr: "auth.uid", contentType: $contentType, messageBody: $messageBody})
+}
+
+mutation CreateGarden($birthdayPersonName: String!, $revealDate: Date!) @auth(level: USER) {
+  garden_insert(data: {ownerId_expr: "auth.uid", birthdayPersonName: $birthdayPersonName, revealDate: $revealDate})
+}

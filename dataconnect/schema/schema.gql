@@ -1,0 +1,34 @@
+type User @table {
+  email: String!
+  displayName: String!
+  profilePhotoUrl: String
+}
+
+type Garden @table {
+  owner: User!
+  birthdayPersonName: String!
+  revealDate: Date!
+  description: String
+  themeColor: String
+}
+
+type Wish @table {
+  garden: Garden!
+  contributor: User!
+  contentType: String!
+  contentUrl: String
+  messageBody: String
+}
+
+type Invitation @table {
+  garden: Garden!
+  inviteCode: String!
+  invitedEmail: String
+}
+
+type Notification @table {
+  recipient: User!
+  message: String!
+  readStatus: Boolean
+  linkToGarden: Garden
+}
