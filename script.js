@@ -23,7 +23,10 @@ const starterWishes = [
 	{ name: "Aline", message: "Wishing you a year full of bright moments!" },
 	{ name: "Cyusa", message: "May your birthday be as wonderful as you are." },
 	{ name: "Mugisha", message: "More joy, laughter, and beautiful memories!" },
-	{ name: "Gaby", message: "Cheers to your happiest year yet!" }
+	{ name: "Gaby", message: "Cheers to your happiest year yet!" },
+	{ name: "Naomi", message: "Isabukuru nziza yamavuko Imana iguhaze imigisha" },
+	{ name: "Mihigo", message: "Umunsi mwiza wamavuko" },
+	{ name: "Mike", message: "Nkwifurije imigisha imana itanga Umwaka uzakubere uwi byishimo gushirwa ni byiza biva ku Mana" }
 ];
 const birthdayImages = ["image/image1.jpg", "image/image2.jpg"];
 const fallbackImage = birthdayImages[0];

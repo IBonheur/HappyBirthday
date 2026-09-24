@@ -14,3 +14,5 @@ firebase deploy --only functions,firestore
 ```
 
 The GitHub token should have only the minimum repository contents permission needed to update the export file. The CI workflows also require a repository secret named `FIREBASE_SERVICE_ACCOUNT`. Firestore remains the source of truth if GitHub is unavailable.
+
+To configure the CI credential, open the GitHub repository at `Settings > Secrets and variables > Actions`, choose `New repository secret`, name it `FIREBASE_SERVICE_ACCOUNT`, and paste the complete Google service-account JSON as its value. The VS Code warning about `Context access might be invalid` is a static checker warning for custom secret names; `${{ secrets.FIREBASE_SERVICE_ACCOUNT }}` is the correct GitHub Actions syntax. Never commit this JSON to the repository.
