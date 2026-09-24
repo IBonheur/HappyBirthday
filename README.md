@@ -6,7 +6,7 @@ It’s a new year, and I wanted to make it special by hearing from friends and f
 
 Submitted wishes are validated against the approved author list and stored as individual documents in the `birthdayWishes` Firestore collection. A Firestore trigger exports each new document to a CSV file in GitHub using the `GITHUB_TOKEN` Firebase secret; the browser never receives that token.
 
-Before deploying the export function, set `GITHUB_REPOSITORY=IBonheur/HappyBirthday` in the Functions environment (or replace it with your repository), optionally set `GITHUB_WISHES_PATH`, and configure both the Firebase and GitHub Actions secrets:
+The export defaults to `IBonheur/HappyBirthday`; override it with `GITHUB_REPOSITORY` in the Functions environment if needed. You can also override `GITHUB_WISHES_PATH`, then configure both the Firebase and GitHub Actions secrets:
 
 ```sh
 firebase functions:secrets:set GITHUB_TOKEN

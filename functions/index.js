@@ -26,7 +26,7 @@ const {cleanWish} = require("./src/validation");
 setGlobalOptions({maxInstances: 10});
 
 const githubToken = defineSecret("GITHUB_TOKEN");
-const githubRepository = process.env.GITHUB_REPOSITORY;
+const githubRepository = process.env.GITHUB_REPOSITORY || "IBonheur/HappyBirthday";
 const githubPath = process.env.GITHUB_WISHES_PATH || "data/wishes.csv";
 
 function csvCell(value) {
