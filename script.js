@@ -20,17 +20,17 @@ const pendingStorageKey = STORAGE_KEYS.pendingWishes;
 const revealDelay = 10000;
 const imageChangeDelay = 30000;
 const starterWishes = [
+	{ name: "Mihigo", message: "Umunsi mwiza wamavuko" },
 	{ name: "Aline", message: "Wishing you a year full of bright moments!" },
 	{ name: "Cyusa", message: "May your birthday be as wonderful as you are." },
+	{ name: "Mike", message: "Nkwifurije imigisha imana itanga Umwaka uzakubere uwi byishimo gushirwa ni byiza biva ku Mana" },
 	{ name: "Mugisha", message: "More joy, laughter, and beautiful memories!" },
 	{ name: "Gaby", message: "Cheers to your happiest year yet!" },
 	{ name: "Naomi", message: "Isabukuru nziza yamavuko Imana iguhaze imigisha" },
-	{ name: "Mihigo", message: "Umunsi mwiza wamavuko" },
-	{ name: "Mike", message: "Nkwifurije imigisha imana itanga Umwaka uzakubere uwi byishimo gushirwa ni byiza biva ku Mana" }
+	
 ];
 const birthdayImages = ["image/image1.jpg", "image/image2.jpg"];
 const fallbackImage = birthdayImages[0];
-const blockedShortcuts = new Set(["s", "u", "p"]);
 const backgroundScenes = ["scene-balloons", "scene-cakes", "scene-hearts"];
 const background = document.querySelector(".body-bg");
 
@@ -81,19 +81,7 @@ async function saveCloudWish(wish) {
 	await createWish(wish);
 }
 
-document.addEventListener("contextmenu", (event) => event.preventDefault());
 document.addEventListener("dragstart", (event) => event.preventDefault());
-document.addEventListener("selectstart", (event) => {
-	if (!(event.target instanceof HTMLInputElement)) {
-		event.preventDefault();
-	}
-});
-document.addEventListener("keydown", (event) => {
-	const key = event.key.toLowerCase();
-	if ((event.ctrlKey || event.metaKey) && blockedShortcuts.has(key)) {
-		event.preventDefault();
-	}
-});
 
 window.addEventListener("beforeprint", () => setPrivacyMode(true));
 window.addEventListener("afterprint", () => {
@@ -144,6 +132,18 @@ async function flushPendingWishes() {
 	}
 	pendingWishes = remainingWishes;
 	savePendingWishes();
+}
+
+async function synchronizeWishes() {
+	await loadCloudWishes();
+	await flushPendingWishes();
+	await loadCloudWishes();
+}
+
+function createClientId() {
+	const bytes = new Uint8Array(15);
+	crypto.getRandomValues(bytes);
+	return [...bytes].map((byte) => byte.toString(36).padStart(2, "0")).join("").slice(0, 20);
 }
 
 function saveWishes() {
@@ -238,7 +238,7 @@ wishForm.addEventListener("submit", async (event) => {
 		return;
 	}
 
-	const newWish = { name, message: wish };
+	const newWish = { name, message: wish, clientId: createClientId() };
 	submitButton.disabled = true;
 	formStatus.textContent = "";
 	formStatus.classList.remove("is-error");
@@ -272,11 +272,9 @@ renderWishes();
 startTicker();
 startImageRotation();
 startSceneRotation();
-loadCloudWishes();
-flushPendingWishes();
+synchronizeWishes();
 window.setTimeout(() => {
 	wishPanel.hidden = false;
-	wishInput.focus({ preventScroll: true });
 }, revealDelay);
 
 document.addEventListener("visibilitychange", () => {

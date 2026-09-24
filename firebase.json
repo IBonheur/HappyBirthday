@@ -76,17 +76,6 @@
         "firebase-debug.*.log",
         "functions"
       ]
-    },
-    {
-      "backendId": "happybirthday",
-      "rootDir": "/",
-      "ignore": [
-        "node_modules",
-        ".git",
-        "firebase-debug.log",
-        "firebase-debug.*.log",
-        "functions"
-      ]
     }
   ],
   "hosting": {
@@ -94,7 +83,17 @@
     "ignore": [
       "firebase.json",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "functions/**",
+      "database/**",
+      "dataconnect/**",
+      ".github/**",
+      "*.rules",
+      "*.json",
+      "*.yaml",
+      "*.yml",
+      "README.md",
+      "skills-lock.json"
     ]
   },
   "storage": {

@@ -1,6 +1,13 @@
 name: Deploy Firebase backend
 
 on:
+  push:
+    branches:
+      - main
+    paths:
+      - "functions/**"
+      - "firebase.json"
+      - ".github/workflows/firebase-backend.yaml"
   workflow_dispatch:
 
 permissions:

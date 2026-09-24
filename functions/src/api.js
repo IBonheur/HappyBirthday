@@ -64,8 +64,12 @@ function createApi({ db, auth, FieldValue, config }) {
 				if (limited(request)) return response.status(429).json({ error: "Too many wishes." });
 				const wish = cleanWish(request.body);
 				if (!wish) return response.status(400).json({ error: "Invalid wish." });
-				const reference = collection.doc();
-				await reference.create({ ...wish, createdAt: FieldValue.serverTimestamp() });
+				const reference = wish.clientId ? collection.doc(wish.clientId) : collection.doc();
+				await reference.create({
+					name: wish.name,
+					message: wish.message,
+					createdAt: FieldValue.serverTimestamp(),
+				});
 				return response.status(201).json({ ok: true });
 			}
 			response.set("Allow", "GET, POST, OPTIONS");

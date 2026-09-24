@@ -1,4 +1,4 @@
-import { addDoc, collection, getDocs, limit, orderBy, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { addDoc, collection, doc, getDocs, limit, orderBy, query, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 import { db, ensureAnonymousSession } from "./firebase.js";
 import { HTTP_BACKEND_URL, USE_HTTP_BACKEND } from "./config.js";
 import { normalizeWish } from "./schema.js";
@@ -29,9 +29,14 @@ export async function createWish(wish) {
 		return;
 	}
 	await ensureAnonymousSession();
-	await addDoc(wishesCollection, {
+	const wishData = {
 		name: wish.name,
 		message: wish.message,
 		createdAt: serverTimestamp()
-	});
+	};
+	if (wish.clientId) {
+		await setDoc(doc(wishesCollection, wish.clientId), wishData, { merge: false });
+		return;
+	}
+	await addDoc(wishesCollection, wishData);
 }

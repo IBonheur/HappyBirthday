@@ -9,9 +9,15 @@
 
 const {setGlobalOptions} = require("firebase-functions");
 const {onDocumentCreated} = require("firebase-functions/v2/firestore");
+const {onRequest} = require("firebase-functions/v2/https");
 const {defineSecret} = require("firebase-functions/params");
+const {initializeApp} = require("firebase-admin/app");
+const {getAuth} = require("firebase-admin/auth");
+const {FieldValue, getFirestore} = require("firebase-admin/firestore");
 const logger = require("firebase-functions/logger");
+const {createApi} = require("./src/api");
 const {cleanWish} = require("./src/validation");
+const config = require("./src/config");
 
 // For cost control, you can set the maximum number of containers that can be
 // running at the same time. This helps mitigate the impact of unexpected
@@ -24,6 +30,14 @@ const {cleanWish} = require("./src/validation");
 // In the v1 API, each function can only serve one request per container, so
 // this will be the maximum concurrent request count.
 setGlobalOptions({maxInstances: 10});
+initializeApp();
+
+exports.wishesApi = onRequest(createApi({
+  db: getFirestore(),
+  auth: getAuth(),
+  FieldValue,
+  config,
+}));
 
 const githubToken = defineSecret("GITHUB_TOKEN");
 const githubRepository = process.env.GITHUB_REPOSITORY || "IBonheur/HappyBirthday";
@@ -92,6 +106,7 @@ exports.exportWishToGithub = onDocumentCreated({
   document: "birthdayWishes/{wishId}",
   database: "happybirthday",
   secrets: [githubToken],
+  retry: true,
 }, async (event) => {
   const rawWish = event.data && event.data.data();
   const wish = cleanWish(rawWish);
