@@ -213,6 +213,16 @@ function showThankYou(name) {
 	window.setTimeout(() => toast.classList.remove("is-visible"), 3200);
 }
 
+function clearNameError() {
+	wishName.removeAttribute("aria-invalid");
+	if (formStatus.classList.contains("is-error")) {
+		formStatus.textContent = "";
+		formStatus.classList.remove("is-error");
+	}
+}
+
+wishName.addEventListener("input", clearNameError);
+
 wishForm.addEventListener("submit", async (event) => {
 	event.preventDefault();
 	const submitButton = wishForm.querySelector("button[type=submit]");
@@ -221,13 +231,23 @@ wishForm.addEventListener("submit", async (event) => {
 
 	if (!name || !wish) {
 		formStatus.textContent = "Please add your name and wish.";
+		formStatus.classList.add("is-error");
 		(name ? wishInput : wishName).focus();
+		return;
+	}
+
+	if (!WISH_AUTHORS.includes(name)) {
+		formStatus.textContent = "Please enter one of the registered names exactly as it appears in the wish list.";
+		formStatus.classList.add("is-error");
+		wishName.setAttribute("aria-invalid", "true");
+		wishName.focus();
 		return;
 	}
 
 	const newWish = { name, message: wish };
 	submitButton.disabled = true;
 	formStatus.textContent = "";
+	formStatus.classList.remove("is-error");
 
 	try {
 		await saveCloudWish(newWish);
@@ -243,6 +263,7 @@ wishForm.addEventListener("submit", async (event) => {
 	tickerIndex = 0;
 	showNextWish();
 	wishForm.reset();
+	wishName.removeAttribute("aria-invalid");
 	showThankYou(name);
 	submitButton.disabled = false;
 });
