@@ -1,6 +1,6 @@
-const { cleanWish, wishId } = require("./validation");
+const { cleanWish } = require("./validation");
 
-function createApi({ db, auth, FieldValue, crypto, config }) {
+function createApi({ db, auth, FieldValue, config }) {
 	const attempts = new Map();
 
 	function securityHeaders(response) {
@@ -64,7 +64,7 @@ function createApi({ db, auth, FieldValue, crypto, config }) {
 				if (limited(request)) return response.status(429).json({ error: "Too many wishes." });
 				const wish = cleanWish(request.body);
 				if (!wish) return response.status(400).json({ error: "Invalid wish." });
-				const reference = collection.doc(wishId(wish, crypto));
+				const reference = collection.doc();
 				await reference.create({ ...wish, createdAt: FieldValue.serverTimestamp() });
 				return response.status(201).json({ ok: true });
 			}

@@ -1,7 +1,6 @@
 import { createWish, listWishes } from "./frontend/api.js";
 import { readJson, writeJson } from "./frontend/storage.js";
 import { STORAGE_KEYS, MAX_LOCAL_WISHES, MAX_PENDING_WISHES } from "./frontend/config.js";
-import { WISH_AUTHORS } from "./frontend/schema.js";
 
 const wishForm = document.querySelector("#wish-form");
 const birthdayImage = document.querySelector("#birthday-image");
@@ -57,7 +56,7 @@ function normalizeWish(wish) {
 	if (wish && typeof wish.name === "string" && typeof wish.message === "string") {
 		const name = wish.name.trim();
 		const message = wish.message.trim();
-		return WISH_AUTHORS.includes(name) && message ? { name, message, createdAt: wish.createdAt ?? null } : null;
+		return name && message ? { name, message, createdAt: wish.createdAt ?? null } : null;
 	}
 
 	return null;
@@ -233,14 +232,6 @@ wishForm.addEventListener("submit", async (event) => {
 		formStatus.textContent = "Please add your name and wish.";
 		formStatus.classList.add("is-error");
 		(name ? wishInput : wishName).focus();
-		return;
-	}
-
-	if (!WISH_AUTHORS.includes(name)) {
-		formStatus.textContent = "Please enter one of the registered names exactly as it appears in the wish list.";
-		formStatus.classList.add("is-error");
-		wishName.setAttribute("aria-invalid", "true");
-		wishName.focus();
 		return;
 	}
 

@@ -4,7 +4,7 @@ It’s a new year, and I wanted to make it special by hearing from friends and f
 
 ## Wish storage
 
-Submitted wishes are validated against the approved author list and stored as individual documents in the `birthdayWishes` Firestore collection. A Firestore trigger exports each new document to a CSV file in GitHub using the `GITHUB_TOKEN` Firebase secret; the browser never receives that token.
+Submitted wishes accept a user-entered name and message, validate their size, and are stored as individual documents in the `birthdayWishes` Firestore collection. A Firestore trigger appends every new document to the single ordered `data/wishes.csv` file in GitHub using the `GITHUB_TOKEN` Firebase secret; the browser never receives that token.
 
 The export defaults to `IBonheur/HappyBirthday`; override it with `GITHUB_REPOSITORY` in the Functions environment if needed. You can also override `GITHUB_WISHES_PATH`, then configure both the Firebase and GitHub Actions secrets:
 

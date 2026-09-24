@@ -427,17 +427,6 @@ body > :not(.privacy-screen) {
 	outline-offset: 2px;
 }
 
-.field-hint {
-	margin: 0.35rem 0 0;
-	color: rgba(255, 250, 240, 0.64);
-	font-size: 0.7rem;
-	line-height: 1.35;
-}
-
-.wish-form input[aria-invalid="true"] {
-	box-shadow: 0 0 0 3px rgba(255, 186, 92, 0.42);
-}
-
 .form-status { min-height: 1.1rem; margin: 0.4rem 0 0; color: var(--mint); font-size: 0.8rem; }
 .form-status.is-error { color: #ffd08a; }
 

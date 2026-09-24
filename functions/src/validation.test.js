@@ -10,7 +10,7 @@ test("validates and trims wishes", () => {
     message: "Happy birthday!",
   });
   assert.equal(cleanWish({name: "", message: "Hello"}), null);
-  assert.equal(cleanWish({name: "Bonheur", message: "Hello"}), null);
+  assert.deepEqual(cleanWish({name: "Bonheur", message: "Hello"}), {name: "Bonheur", message: "Hello"});
 });
 
 test("creates deterministic ids", () => {
