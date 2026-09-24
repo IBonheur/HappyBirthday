@@ -5,9 +5,10 @@ service cloud.firestore {
 		match /birthdayWishes/{wishId} {
 			allow read: if isAnonymousUser() || isAdmin();
 			allow create: if isAnonymousUser()
-				&& wishId.matches('^[a-f0-9]{64}$')
+				&& wishId.matches('^[A-Za-z0-9]{20}$')
 				&& request.resource.data.keys().hasOnly(['name', 'message', 'createdAt'])
 				&& request.resource.data.name is string
+				&& request.resource.data.name in ['Aline', 'Cyusa', 'Mugisha', 'Gaby', 'Naomi', 'Mihigo', 'Mike', 'Simi', 'Keza', 'Beni', 'Emma', 'SWH']
 				&& request.resource.data.name.size() > 0
 				&& request.resource.data.name.size() <= 40
 				&& request.resource.data.message is string

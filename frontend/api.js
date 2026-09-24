@@ -1,15 +1,9 @@
-import { collection, doc, getDoc, getDocs, limit, orderBy, query, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { addDoc, collection, getDocs, limit, orderBy, query, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 import { db, ensureAnonymousSession } from "./firebase.js";
 import { HTTP_BACKEND_URL, USE_HTTP_BACKEND } from "./config.js";
 import { normalizeWish } from "./schema.js";
 
 const wishesCollection = collection(db, "birthdayWishes");
-
-async function getWishId(wish) {
-	const data = new TextEncoder().encode(`${wish.name}\n${wish.message}`);
-	const digest = await crypto.subtle.digest("SHA-256", data);
-	return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
-}
 
 export async function listWishes() {
 	if (USE_HTTP_BACKEND) {
@@ -35,10 +29,7 @@ export async function createWish(wish) {
 		return;
 	}
 	await ensureAnonymousSession();
-	const wishId = await getWishId(wish);
-	const wishReference = doc(wishesCollection, wishId);
-	if ((await getDoc(wishReference)).exists()) return;
-	await setDoc(wishReference, {
+	await addDoc(wishesCollection, {
 		name: wish.name,
 		message: wish.message,
 		createdAt: serverTimestamp()

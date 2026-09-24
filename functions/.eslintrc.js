@@ -4,8 +4,9 @@ module.exports = {
     node: true,
   },
   parserOptions: {
-    "ecmaVersion": 2018,
+    "ecmaVersion": 2020,
   },
+  ignorePatterns: ["src/dataconnect-admin-generated/**"],
   extends: [
     "eslint:recommended",
     "google",
@@ -14,6 +15,12 @@ module.exports = {
     "no-restricted-globals": ["error", "name", "length"],
     "prefer-arrow-callback": "error",
     "quotes": ["error", "double", {"allowTemplateLiterals": true}],
+    "max-len": "off",
+    "require-jsdoc": "off",
+    "indent": "off",
+    "linebreak-style": "off",
+    "no-tabs": "off",
+    "object-curly-spacing": "off",
   },
   overrides: [
     {

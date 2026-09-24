@@ -1,6 +1,7 @@
 import { createWish, listWishes } from "./frontend/api.js";
 import { readJson, writeJson } from "./frontend/storage.js";
 import { STORAGE_KEYS, MAX_LOCAL_WISHES, MAX_PENDING_WISHES } from "./frontend/config.js";
+import { WISH_AUTHORS } from "./frontend/schema.js";
 
 const wishForm = document.querySelector("#wish-form");
 const birthdayImage = document.querySelector("#birthday-image");
@@ -20,10 +21,10 @@ const pendingStorageKey = STORAGE_KEYS.pendingWishes;
 const revealDelay = 10000;
 const imageChangeDelay = 30000;
 const starterWishes = [
-	"Wishing you a year full of bright moments!",
-	"May your birthday be as wonderful as you are.",
-	"More joy, laughter, and beautiful memories!",
-	"Cheers to your happiest year yet!"
+	{ name: "Aline", message: "Wishing you a year full of bright moments!" },
+	{ name: "Cyusa", message: "May your birthday be as wonderful as you are." },
+	{ name: "Mugisha", message: "More joy, laughter, and beautiful memories!" },
+	{ name: "Gaby", message: "Cheers to your happiest year yet!" }
 ];
 const birthdayImages = ["image/image1.jpg", "image/image2.jpg"];
 const fallbackImage = birthdayImages[0];
@@ -53,14 +54,10 @@ function handlePageExit() {
 }
 
 function normalizeWish(wish) {
-	if (typeof wish === "string" && wish.trim()) {
-		return { name: "A friend", message: wish.trim() };
-	}
-
 	if (wish && typeof wish.name === "string" && typeof wish.message === "string") {
 		const name = wish.name.trim();
 		const message = wish.message.trim();
-		return name && message ? { name, message, createdAt: wish.createdAt ?? null } : null;
+		return WISH_AUTHORS.includes(name) && message ? { name, message, createdAt: wish.createdAt ?? null } : null;
 	}
 
 	return null;
@@ -162,13 +159,8 @@ function showNextWish() {
 	const currentWish = availableWishes[tickerIndex % availableWishes.length];
 	tickerText.classList.remove("is-changing");
 	void tickerText.offsetWidth;
-	if (typeof currentWish === "string") {
-		wishAuthor.textContent = "Birthday friends";
-		wishMessage.textContent = currentWish;
-	} else {
-		wishAuthor.textContent = currentWish.name;
-		wishMessage.textContent = currentWish.message;
-	}
+	wishAuthor.textContent = currentWish.name;
+	wishMessage.textContent = currentWish.message;
 	tickerText.classList.add("is-changing");
 	tickerIndex += 1;
 }
@@ -244,6 +236,7 @@ wishForm.addEventListener("submit", async (event) => {
 	} catch {
 		pendingWishes = [newWish, ...pendingWishes].slice(0, 20);
 		savePendingWishes();
+		formStatus.textContent = "Saved on this device and will retry when the connection returns.";
 	}
 
 	renderWishes();

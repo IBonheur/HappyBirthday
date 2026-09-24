@@ -39,7 +39,7 @@
 			</div>
 			<div class="wish-ticker" aria-live="polite">
 				<div class="wish-ticker-text" id="wish-ticker-text">
-					<strong class="wish-author" id="wish-author">Birthday friends</strong>
+					<strong class="wish-author" id="wish-author">Aline</strong>
 					<span class="wish-message" id="wish-message">Your birthday wishes will appear here.</span>
 				</div>
 			</div>
@@ -55,7 +55,12 @@
 				<div class="form-fields">
 					<div>
 						<label for="wish-name">Your name</label>
-						<input id="wish-name" name="name" type="text" maxlength="40" placeholder="Your name" autocomplete="name" required>
+						<select id="wish-name" name="name" autocomplete="name" required>
+							<option value="" selected disabled>Choose your name</option>
+							<option>Aline</option><option>Cyusa</option><option>Mugisha</option><option>Gaby</option>
+							<option>Naomi</option><option>Mihigo</option><option>Mike</option><option>Simi</option>
+							<option>Keza</option><option>Beni</option><option>Emma</option><option>SWH</option>
+						</select>
 					</div>
 					<div>
 						<label for="wish-input">Your message</label>
@@ -66,6 +71,7 @@
 					<button type="submit">Send <span aria-hidden="true">&#8594;</span></button>
 				</div>
 				<p class="form-status" id="form-status" role="status" aria-live="polite"></p>
+				<p class="form-status">Only your selected name and wish are stored. No device fingerprint is collected.</p>
 			</form>
 		</section>
 	</main>
