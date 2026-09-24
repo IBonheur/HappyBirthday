@@ -3,7 +3,7 @@ import { getAuth, GoogleAuthProvider, signInAnonymously, signInWithPopup, signOu
 import { getFirestore } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 
 const firebaseConfig = {
-	apiKey: "AIzaSyDDkhqR-guxHmU8kagnzDQOYEdBvWieuhc",
+	apiKey: "AIzaSyDDkhqR-guxHmU8kagnzDQOYEdvBWieuhc",
 	authDomain: "happybirthday-6d8ee.firebaseapp.com",
 	projectId: "happybirthday-6d8ee",
 	storageBucket: "happybirthday-6d8ee.firebasestorage.app",
