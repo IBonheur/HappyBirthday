@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { collection, doc, getDocs, limit, onSnapshot, orderBy, query, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 import { db, ensureAnonymousSession } from "./firebase.js";
 import { HTTP_BACKEND_URL, USE_HTTP_BACKEND } from "./config.js";
 import { normalizeWish } from "./schema.js";
@@ -20,6 +20,43 @@ export async function listWishes() {
 	await ensureAnonymousSession();
 	const snapshot = await getDocs(query(wishesCollection, orderBy("createdAt", "desc"), limit(50)));
 	return snapshot.docs.map((document) => ({ id: document.id, ...document.data() })).map(normalizeWish).filter(Boolean);
+}
+
+export async function watchWishes(onUpdate, onError) {
+	if (USE_HTTP_BACKEND) {
+		let active = true;
+		let polling = false;
+		const poll = async () => {
+			if (!active || polling) return;
+			polling = true;
+			try {
+				onUpdate(await listWishes(), false);
+			} catch (error) {
+				onError?.(error);
+			} finally {
+				polling = false;
+			}
+		};
+		await poll();
+		const timer = window.setInterval(poll, 20000);
+		return () => {
+			active = false;
+			window.clearInterval(timer);
+		};
+	}
+
+	await ensureAnonymousSession();
+	return onSnapshot(
+		query(wishesCollection, orderBy("createdAt", "desc"), limit(50)),
+		{ includeMetadataChanges: true },
+		(snapshot) => {
+			onUpdate(
+				snapshot.docs.map((document) => ({ id: document.id, ...document.data() })).map(normalizeWish).filter(Boolean),
+				snapshot.metadata.fromCache
+			);
+		},
+		onError
+	);
 }
 
 export async function createWish(wish) {

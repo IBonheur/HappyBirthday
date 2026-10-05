@@ -1,4 +1,4 @@
-import { createWish, listWishes } from "./frontend/api.js";
+import { createWish, watchWishes } from "./frontend/api.js";
 import { readJson, writeJson } from "./frontend/storage.js";
 import { STORAGE_KEYS, MAX_LOCAL_WISHES, MAX_PENDING_WISHES } from "./frontend/config.js";
 
@@ -39,6 +39,8 @@ let imageTimer;
 let sceneIndex = 0;
 let sceneTimer;
 let flushingPending = false;
+let stopWishUpdates;
+let wishUpdatesGeneration = 0;
 
 function setPrivacyMode(enabled) {
 	document.body.classList.toggle("privacy-mode", enabled);
@@ -46,10 +48,13 @@ function setPrivacyMode(enabled) {
 }
 
 function handlePageExit() {
+	wishUpdatesGeneration += 1;
 	setPrivacyMode(true);
 	window.clearInterval(tickerTimer);
 	window.clearInterval(imageTimer);
 	window.clearInterval(sceneTimer);
+	stopWishUpdates?.();
+	stopWishUpdates = null;
 }
 
 function normalizeWish(wish) {
@@ -66,17 +71,34 @@ function normalizeWish(wish) {
 	return null;
 }
 
-async function loadCloudWishes() {
+async function startWishUpdates() {
+	const generation = ++wishUpdatesGeneration;
+	stopWishUpdates?.();
+	stopWishUpdates = null;
 	try {
-		wishes = (await listWishes()).map(normalizeWish).filter(Boolean);
-		saveWishes();
-		renderWishes();
-		tickerIndex = 0;
-		showNextWish();
+		const stop = await watchWishes((latestWishes, fromCache) => {
+			wishes = latestWishes.map(normalizeWish).filter(Boolean);
+			saveWishes();
+			renderWishes();
+			tickerIndex = 0;
+			showNextWish();
+			if (fromCache && pendingWishes.length) {
+				formStatus.textContent = "Cloud connection unavailable. Pending wishes are still awaiting confirmation.";
+			}
+		}, () => {
+			formStatus.textContent = pendingWishes.length
+				? "Cloud connection unavailable. Pending wishes are still awaiting confirmation."
+				: "Unable to refresh wishes right now.";
+		});
+		if (generation !== wishUpdatesGeneration || document.hidden) {
+			stop();
+			return;
+		}
+		stopWishUpdates = stop;
 	} catch {
 		formStatus.textContent = pendingWishes.length
 			? "Cloud connection unavailable. Pending wishes are still awaiting confirmation."
-			: "";
+			: "Unable to connect to the wishes service right now.";
 	}
 }
 
@@ -299,10 +321,12 @@ renderWishes();
 startTicker();
 startImageRotation();
 startSceneRotation();
-loadCloudWishes();
+startWishUpdates();
 flushPendingWishes();
 window.addEventListener("online", flushPendingWishes);
-window.setInterval(flushPendingWishes, 30000);
+window.setInterval(() => {
+	if (!document.hidden) flushPendingWishes();
+}, 30000);
 window.setTimeout(() => {
 	wishPanel.hidden = false;
 	wishInput.focus({ preventScroll: true });
@@ -316,7 +340,12 @@ document.addEventListener("visibilitychange", () => {
 		startTicker();
 		startImageRotation();
 		startSceneRotation();
+		startWishUpdates();
 	}
+});
+
+window.addEventListener("pageshow", () => {
+	if (!document.hidden) startWishUpdates();
 });
 
 window.addEventListener("blur", () => setPrivacyMode(true));
