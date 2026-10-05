@@ -1,9 +1,15 @@
-import { addDoc, collection, doc, getDocs, limit, orderBy, query, serverTimestamp, setDoc } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
+import { collection, doc, getDocs, limit, orderBy, query, runTransaction, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.1.0/firebase-firestore.js";
 import { db, ensureAnonymousSession } from "./firebase.js";
 import { HTTP_BACKEND_URL, USE_HTTP_BACKEND } from "./config.js";
 import { normalizeWish } from "./schema.js";
 
 const wishesCollection = collection(db, "birthdayWishes");
+
+async function getWishId(wish) {
+	const data = new TextEncoder().encode(`${wish.name}\n${wish.message}`);
+	const digest = await crypto.subtle.digest("SHA-256", data);
+	return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
 
 export async function listWishes() {
 	if (USE_HTTP_BACKEND) {
@@ -29,14 +35,15 @@ export async function createWish(wish) {
 		return;
 	}
 	await ensureAnonymousSession();
-	const wishData = {
-		name: wish.name,
-		message: wish.message,
-		createdAt: serverTimestamp()
-	};
-	if (wish.clientId) {
-		await setDoc(doc(wishesCollection, wish.clientId), wishData, { merge: false });
-		return;
-	}
-	await addDoc(wishesCollection, wishData);
+	const wishId = await getWishId(wish);
+	const wishReference = doc(wishesCollection, wishId);
+	await runTransaction(db, async (transaction) => {
+		const existing = await transaction.get(wishReference);
+		if (existing.exists()) return;
+		transaction.set(wishReference, {
+			name: wish.name,
+			message: wish.message,
+			createdAt: serverTimestamp()
+		});
+	});
 }

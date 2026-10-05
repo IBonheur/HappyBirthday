@@ -20,11 +20,17 @@ const googleProvider = new GoogleAuthProvider();
 let authReady;
 export function ensureAnonymousSession() {
 	if (auth.currentUser && auth.currentUser.isAnonymous === false) return Promise.resolve(auth.currentUser);
-	authReady ??= signInAnonymously(auth);
+	if (!authReady) {
+		authReady = signInAnonymously(auth).catch((error) => {
+			authReady = null;
+			throw error;
+		});
+	}
 	return authReady;
 }
 
 export function signInAsAdmin() {
+	if (isAdmin()) return Promise.resolve(auth.currentUser);
 	return signInWithPopup(auth, googleProvider).then((result) => {
 		if (result.user.email?.toLowerCase() !== adminEmail) {
 			return signOut(auth).then(() => {

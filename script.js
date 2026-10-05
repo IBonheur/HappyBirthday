@@ -8,7 +8,6 @@ const wishName = document.querySelector("#wish-name");
 const wishInput = document.querySelector("#wish-input");
 const wishPanel = document.querySelector("#wish-panel");
 const wishList = document.querySelector("#wish-list");
-const wishCount = document.querySelector("#wish-count");
 const tickerText = document.querySelector("#wish-ticker-text");
 const wishAuthor = document.querySelector("#wish-author");
 const wishMessage = document.querySelector("#wish-message");
@@ -20,28 +19,26 @@ const pendingStorageKey = STORAGE_KEYS.pendingWishes;
 const revealDelay = 10000;
 const imageChangeDelay = 30000;
 const starterWishes = [
-	{ name: "Mihigo", message: "Umunsi mwiza wamavuko" },
-	{ name: "Aline", message: "Wishing you a year full of bright moments!" },
-	{ name: "Cyusa", message: "May your birthday be as wonderful as you are." },
-	{ name: "Mike", message: "Nkwifurije imigisha imana itanga Umwaka uzakubere uwi byishimo gushirwa ni byiza biva ku Mana" },
-	{ name: "Mugisha", message: "More joy, laughter, and beautiful memories!" },
-	{ name: "Gaby", message: "Cheers to your happiest year yet!" },
-	{ name: "Naomi", message: "Isabukuru nziza yamavuko Imana iguhaze imigisha" },
-	
+	"Wishing you a year full of bright moments!",
+	"May your birthday be as wonderful as you are.",
+	"More joy, laughter, and beautiful memories!",
+	"Cheers to your happiest year yet!"
 ];
 const birthdayImages = ["image/image1.jpg", "image/image2.jpg"];
 const fallbackImage = birthdayImages[0];
+const blockedShortcuts = new Set(["s", "u", "p"]);
 const backgroundScenes = ["scene-balloons", "scene-cakes", "scene-hearts"];
 const background = document.querySelector(".body-bg");
 
-let wishes = loadWishes();
 let pendingWishes = loadPendingWishes();
+let wishes = loadWishes().filter((wish) => !pendingWishes.some((pendingWish) => pendingWish.name === wish.name && pendingWish.message === wish.message));
 let tickerIndex = 0;
 let tickerTimer;
 let imageIndex = 0;
 let imageTimer;
 let sceneIndex = 0;
 let sceneTimer;
+let flushingPending = false;
 
 function setPrivacyMode(enabled) {
 	document.body.classList.toggle("privacy-mode", enabled);
@@ -56,6 +53,10 @@ function handlePageExit() {
 }
 
 function normalizeWish(wish) {
+	if (typeof wish === "string" && wish.trim()) {
+		return { name: "A friend", message: wish.trim() };
+	}
+
 	if (wish && typeof wish.name === "string" && typeof wish.message === "string") {
 		const name = wish.name.trim();
 		const message = wish.message.trim();
@@ -73,15 +74,39 @@ async function loadCloudWishes() {
 		tickerIndex = 0;
 		showNextWish();
 	} catch {
-		formStatus.textContent = "";
+		formStatus.textContent = pendingWishes.length
+			? "Cloud connection unavailable. Pending wishes are still awaiting confirmation."
+			: "";
 	}
 }
 
 async function saveCloudWish(wish) {
-	await createWish(wish);
+	let timeoutId;
+	try {
+		await Promise.race([
+			createWish(wish),
+			new Promise((_, reject) => {
+				timeoutId = window.setTimeout(() => reject(new Error("Cloud confirmation timed out.")), 12000);
+			})
+		]);
+	} finally {
+		window.clearTimeout(timeoutId);
+	}
 }
 
+document.addEventListener("contextmenu", (event) => event.preventDefault());
 document.addEventListener("dragstart", (event) => event.preventDefault());
+document.addEventListener("selectstart", (event) => {
+	if (!(event.target instanceof HTMLInputElement)) {
+		event.preventDefault();
+	}
+});
+document.addEventListener("keydown", (event) => {
+	const key = event.key.toLowerCase();
+	if ((event.ctrlKey || event.metaKey) && blockedShortcuts.has(key)) {
+		event.preventDefault();
+	}
+});
 
 window.addEventListener("beforeprint", () => setPrivacyMode(true));
 window.addEventListener("afterprint", () => {
@@ -110,40 +135,37 @@ function loadPendingWishes() {
 }
 
 function savePendingWishes() {
-	try {
-		writeJson(pendingStorageKey, pendingWishes);
-	} catch {
-		return;
-	}
+	return writeJson(pendingStorageKey, pendingWishes);
 }
 
 async function flushPendingWishes() {
-	if (!pendingWishes.length) {
+	if (!pendingWishes.length || flushingPending) {
 		return;
 	}
 
-	const remainingWishes = [];
-	for (const pendingWish of pendingWishes) {
-		try {
-			await saveCloudWish(pendingWish);
-		} catch {
-			remainingWishes.push(pendingWish);
+	flushingPending = true;
+	try {
+		const remainingWishes = [];
+		for (const pendingWish of pendingWishes) {
+			try {
+				await saveCloudWish(pendingWish);
+				wishes = [pendingWish, ...wishes.filter((wish) => wish.name !== pendingWish.name || wish.message !== pendingWish.message)].slice(0, MAX_LOCAL_WISHES);
+			} catch {
+				remainingWishes.push(pendingWish);
+			}
 		}
+		pendingWishes = remainingWishes;
+		savePendingWishes();
+		saveWishes();
+		renderWishes();
+		if (pendingWishes.length === 0) {
+			formStatus.textContent = "Pending wishes have been confirmed in the cloud.";
+		} else {
+			formStatus.textContent = "Some wishes are still awaiting cloud confirmation.";
+		}
+	} finally {
+		flushingPending = false;
 	}
-	pendingWishes = remainingWishes;
-	savePendingWishes();
-}
-
-async function synchronizeWishes() {
-	await loadCloudWishes();
-	await flushPendingWishes();
-	await loadCloudWishes();
-}
-
-function createClientId() {
-	const bytes = new Uint8Array(15);
-	crypto.getRandomValues(bytes);
-	return [...bytes].map((byte) => byte.toString(36).padStart(2, "0")).join("").slice(0, 20);
 }
 
 function saveWishes() {
@@ -161,8 +183,13 @@ function showNextWish() {
 	const currentWish = availableWishes[tickerIndex % availableWishes.length];
 	tickerText.classList.remove("is-changing");
 	void tickerText.offsetWidth;
-	wishAuthor.textContent = currentWish.name;
-	wishMessage.textContent = currentWish.message;
+	if (typeof currentWish === "string") {
+		wishAuthor.textContent = "Birthday friends";
+		wishMessage.textContent = currentWish;
+	} else {
+		wishAuthor.textContent = currentWish.name;
+		wishMessage.textContent = currentWish.message;
+	}
 	tickerText.classList.add("is-changing");
 	tickerIndex += 1;
 }
@@ -206,7 +233,6 @@ function renderWishes() {
 		wishItem.textContent = `${wish.name}: ${wish.message}`;
 		wishList.append(wishItem);
 	});
-	wishCount.textContent = wishes.length;
 }
 
 function showThankYou(name) {
@@ -214,16 +240,6 @@ function showThankYou(name) {
 	toast.classList.add("is-visible");
 	window.setTimeout(() => toast.classList.remove("is-visible"), 3200);
 }
-
-function clearNameError() {
-	wishName.removeAttribute("aria-invalid");
-	if (formStatus.classList.contains("is-error")) {
-		formStatus.textContent = "";
-		formStatus.classList.remove("is-error");
-	}
-}
-
-wishName.addEventListener("input", clearNameError);
 
 wishForm.addEventListener("submit", async (event) => {
 	event.preventDefault();
@@ -233,32 +249,43 @@ wishForm.addEventListener("submit", async (event) => {
 
 	if (!name || !wish) {
 		formStatus.textContent = "Please add your name and wish.";
-		formStatus.classList.add("is-error");
 		(name ? wishInput : wishName).focus();
 		return;
 	}
 
-	const newWish = { name, message: wish, clientId: createClientId() };
+	const newWish = { name, message: wish };
 	submitButton.disabled = true;
 	formStatus.textContent = "";
-	formStatus.classList.remove("is-error");
 
 	try {
 		await saveCloudWish(newWish);
 		wishes = [newWish, ...wishes].slice(0, 50);
-		formStatus.textContent = "";
-	} catch {
-		pendingWishes = [newWish, ...pendingWishes].slice(0, 20);
-		savePendingWishes();
-		formStatus.textContent = "Saved on this device and will retry when the connection returns.";
+		saveWishes();
+		formStatus.textContent = "Your wish has been sent.";
+		wishForm.reset();
+		showThankYou(name);
+	} catch (error) {
+		if (error?.message === "Invalid wish.") {
+			formStatus.textContent = "Please check your name and message, then try again.";
+		} else {
+			const alreadyQueued = pendingWishes.some((wish) => wish.name === newWish.name && wish.message === newWish.message);
+			if (!alreadyQueued && pendingWishes.length >= MAX_PENDING_WISHES) {
+				formStatus.textContent = "The retry queue is full. Keep this message and try again after earlier wishes reconnect.";
+			} else {
+				if (!alreadyQueued) pendingWishes = [newWish, ...pendingWishes];
+				if (savePendingWishes()) {
+					formStatus.textContent = "Connection unavailable. Your wish is awaiting cloud confirmation and will retry automatically.";
+					wishForm.reset();
+				} else {
+					formStatus.textContent = "We could not reach the server or save a retry. Please keep this page open and try again.";
+				}
+			}
+		}
 	}
 
 	renderWishes();
 	tickerIndex = 0;
 	showNextWish();
-	wishForm.reset();
-	wishName.removeAttribute("aria-invalid");
-	showThankYou(name);
 	submitButton.disabled = false;
 });
 
@@ -272,9 +299,13 @@ renderWishes();
 startTicker();
 startImageRotation();
 startSceneRotation();
-synchronizeWishes();
+loadCloudWishes();
+flushPendingWishes();
+window.addEventListener("online", flushPendingWishes);
+window.setInterval(flushPendingWishes, 30000);
 window.setTimeout(() => {
 	wishPanel.hidden = false;
+	wishInput.focus({ preventScroll: true });
 }, revealDelay);
 
 document.addEventListener("visibilitychange", () => {

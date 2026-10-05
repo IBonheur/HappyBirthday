@@ -10,7 +10,8 @@ export function readJson(key, fallback) {
 export function writeJson(key, value) {
 	try {
 		localStorage.setItem(key, JSON.stringify(value));
+		return true;
 	} catch {
-		return;
+		return false;
 	}
 }
