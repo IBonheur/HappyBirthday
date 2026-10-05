@@ -3,16 +3,17 @@ project:
   display_name: HappyBirthday
 
 frontend:
-  platform: github-pages
-  workflow: .github/workflows/github-pages.yaml
+  platform: firebase-hosting
+  public_directory: .
+  workflow: .github/workflows/firebase-hosting-merge.yml
 
 firestore:
   rules: database/firestore.rules
   indexes: database/firestore.indexes.json
 
 deployment:
-  data_workflow: .github/workflows/firebase-data.yaml
+  workflow: .github/workflows/firebase-hosting-merge.yml
   backend_workflow: .github/workflows/firebase-backend.yaml
   services:
+    - hosting
     - firestore
-    - functions

@@ -1,9 +1,6 @@
-name: Deploy Firebase data layer
+name: Manually deploy Firestore rules
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 permissions:
@@ -23,7 +20,7 @@ jobs:
         id: auth
         uses: google-github-actions/auth@v2
         with:
-          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAPPYBIRTHDAY_6D8EE }}
 
       - name: Deploy Firestore rules and indexes
         env:
