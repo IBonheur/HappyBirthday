@@ -38,7 +38,7 @@ function setSecurityHeaders(response) {
 function configureCors(request, response) {
 	const origin = request.get("origin");
 	if (!origin) return true;
-	if (!config.allowedOrigins.has(origin)) return false;
+	if (!allowedOrigins.has(origin)) return false;
 	response.set("Access-Control-Allow-Origin", origin);
 	response.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 	response.set("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization");
@@ -162,9 +162,7 @@ async function saveWish(wish) {
 	const reference = db.collection("birthdayWishes").doc(wishId);
 	await db.runTransaction(async (transaction) => {
 		const snapshot = await transaction.get(reference);
-		if (!snapshot.exists) {
-			transaction.create(reference, { ...wish, createdAt: FieldValue.serverTimestamp(), backupStatus: "pending" });
-		}
+		if (!snapshot.exists) transaction.create(reference, { ...wish, createdAt: FieldValue.serverTimestamp(), backupStatus: "pending" });
 	});
 	return wishId;
 }
@@ -208,21 +206,44 @@ exports.retryPendingBackups = onSchedule({
 }, retryPendingBackups);
 
 exports.wishesApi = onRequest({ region: "us-central1", maxInstances: 3 }, async (request, response) => {
-	response.set("Cache-Control", "no-store");
-	response.set("X-Content-Type-Options", "nosniff");
-	response.set("Referrer-Policy", "no-referrer");
-	if (request.method !== "POST") {
-		response.set("Allow", "POST");
-		return response.status(405).json({ error: "Method not allowed." });
+	setSecurityHeaders(response);
+	if (!configureCors(request, response)) return response.status(403).json({ error: "Origin not allowed." });
+	if (request.method === "OPTIONS") return response.status(204).send("");
+
+	if (request.method === "GET" && request.path.endsWith("/admin/wishes")) {
+		if (!(await isVerifiedAdmin(request))) return response.status(403).json({ error: "Administrator access required." });
+		try {
+			const snapshot = await db.collection("birthdayWishes").orderBy("createdAt", "desc").limit(500).get();
+			return response.status(200).json({ wishes: snapshot.docs.map((document) => ({ id: document.id, ...document.data() })) });
+		} catch (error) {
+			console.error("Admin wish list failed.", error);
+			return response.status(500).json({ error: "Unable to load wishes." });
+		}
 	}
-	if (isRateLimited(request)) return response.status(429).json({ error: "Please try again later." });
-	const wish = cleanWish(request.body);
-	if (!wish) return response.status(400).json({ error: "Invalid wish." });
-	try {
-		await saveWish(wish);
-		return response.status(201).json({ ok: true });
-	} catch (error) {
-		console.error("Wish write failed.", error);
-		return response.status(500).json({ error: "Unable to save wish." });
+
+	if (request.method === "GET") {
+		try {
+			const snapshot = await db.collection("birthdayWishes").orderBy("createdAt", "desc").limit(maxWishes).get();
+			return response.status(200).json({ wishes: snapshot.docs.map((document) => document.data()) });
+		} catch (error) {
+			console.error("Could not read birthday wishes.", error);
+			return response.status(500).json({ error: "Unable to load wishes." });
+		}
 	}
+
+	if (request.method === "POST") {
+		if (isRateLimited(request)) return response.status(429).json({ error: "Please try again later." });
+		const wish = cleanWish(request.body);
+		if (!wish) return response.status(400).json({ error: "Invalid wish." });
+		try {
+			await saveWish(wish);
+			return response.status(201).json({ ok: true });
+		} catch (error) {
+			console.error("Wish write failed.", error);
+			return response.status(500).json({ error: "Unable to save wish." });
+		}
+	}
+
+	response.set("Allow", "GET, POST, OPTIONS");
+	return response.status(405).json({ error: "Method not allowed." });
 });
