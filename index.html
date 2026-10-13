@@ -1,6 +1,5 @@
 <!doctype html>
 <html lang="en">
-
 <head>
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,7 +9,6 @@
 	<link rel="stylesheet" href="style.css">
 	<link rel="stylesheet" href="frontend/layout-overrides.css">
 </head>
-
 <body>
 	<div class="privacy-screen" aria-hidden="true"></div>
 	<div class="body-bg scene-balloons" aria-hidden="true">
@@ -18,25 +16,20 @@
 		<span>🎈</span><span>🎂</span><span>♥</span><span>🎈</span><span>✨</span><span>🎂</span>
 		<span>♡</span><span>🎈</span><span>🎉</span><span>♥</span><span>🎂</span><span>🎈</span>
 	</div>
-
 	<main class="page-shell">
 		<section class="birthday-card" aria-labelledby="msg">
 			<figure class="birthday-photo">
 				<img id="birthday-image" src="image/image1.jpg" alt="Bonheur celebrating a birthday" width="1200" height="1600" draggable="false">
 				<figcaption>Today is all about you</figcaption>
 			</figure>
-
 			<div class="message-overlay">
 				<p class="eyebrow">A little celebration from BonTech</p>
 				<h1 id="msg" aria-live="polite">It's Bonheur's birthday today<br>Mwifurize umunsi mwiza</h1>
 				<p class="intro">Celebrate with a short wish.</p>
 			</div>
 		</section>
-
 		<section class="wishes" aria-labelledby="wishes-title">
-			<div class="section-heading">
-				<h2 id="wishes-title">From everyone wishing you well</h2>
-			</div>
+			<div class="section-heading"><h2 id="wishes-title">From everyone wishing you well</h2></div>
 			<div class="wish-ticker" aria-live="polite">
 				<div class="wish-ticker-text" id="wish-ticker-text">
 					<strong class="wish-author" id="wish-author">Birthday friends</strong>
@@ -45,35 +38,20 @@
 			</div>
 			<ul class="wish-list" id="wish-list" aria-label="All birthday wishes"></ul>
 		</section>
-
 		<section class="wish-panel" id="wish-panel" hidden aria-labelledby="send-title">
-			<div>
-				<p class="eyebrow">Your turn</p>
-				<h2 id="send-title">Send a wish</h2>
-			</div>
+			<div><p class="eyebrow">Your turn</p><h2 id="send-title">Send a wish</h2></div>
 			<form class="wish-form" id="wish-form">
 				<div class="form-fields">
-					<div>
-						<label for="wish-name">Your name</label>
-						<input id="wish-name" name="name" type="text" maxlength="40" placeholder="Your name" autocomplete="name" required>
-					</div>
-					<div>
-						<label for="wish-input">Your message</label>
-						<input id="wish-input" name="wish" type="text" maxlength="140" placeholder="Write a wish" autocomplete="off" required>
-					</div>
+					<div><label for="wish-name">Your name</label><input id="wish-name" name="name" type="text" maxlength="40" placeholder="Your name" autocomplete="name" required></div>
+					<div><label for="wish-input">Your message</label><input id="wish-input" name="wish" type="text" maxlength="140" placeholder="Write a wish" autocomplete="off" required></div>
 				</div>
-				<div class="form-row">
-					<button type="submit">Send <span aria-hidden="true">&#8594;</span></button>
-				</div>
+				<div class="form-row"><button type="submit">Send <span aria-hidden="true">&#8594;</span></button></div>
 				<p class="form-status" id="form-status" role="status" aria-live="polite"></p>
 			</form>
 		</section>
 	</main>
-
 	<footer class="float" id="float">Bonheur@BonTech</footer>
 	<div class="toast" id="toast" role="status" aria-live="polite"></div>
-
 	<script type="module" src="frontend/app.js"></script>
 </body>
-
 </html>

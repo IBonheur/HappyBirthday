@@ -38,7 +38,7 @@ function setSecurityHeaders(response) {
 function configureCors(request, response) {
 	const origin = request.get("origin");
 	if (!origin) return true;
-	if (!allowedOrigins.has(origin)) return false;
+	if (!config.allowedOrigins.has(origin)) return false;
 	response.set("Access-Control-Allow-Origin", origin);
 	response.set("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
 	response.set("Access-Control-Allow-Headers", "Accept, Content-Type, Authorization");
@@ -60,26 +60,20 @@ async function isVerifiedAdmin(request) {
 function cleanWish(body) {
 	const name = typeof body?.name === "string" ? body.name.trim() : "";
 	const message = typeof body?.message === "string" ? body.message.trim() : "";
-	if (!name || name.length > 40 || !message || message.length > 140) {
-		return null;
-	}
+	if (!name || name.length > 40 || !message || message.length > 140) return null;
 	return { name, message };
 }
 
-function getClientKey(request) {
-	return request.get("x-forwarded-for")?.split(",")[0]?.trim() || request.ip || "unknown";
-}
-
 function isRateLimited(request) {
-	const key = getClientKey(request);
+	const key = request.get("x-forwarded-for")?.split(",")[0]?.trim() || request.ip || "unknown";
 	const now = Date.now();
-	const attempts = (writeAttempts.get(key) || []).filter((timestamp) => now - timestamp < requestWindowMs);
-	if (attempts.length >= maxWritesPerWindow) {
-		writeAttempts.set(key, attempts);
+	const recent = (writeAttempts.get(key) || []).filter((timestamp) => now - timestamp < requestWindowMs);
+	if (recent.length >= maxWritesPerWindow) {
+		writeAttempts.set(key, recent);
 		return true;
 	}
-	attempts.push(now);
-	writeAttempts.set(key, attempts);
+	recent.push(now);
+	writeAttempts.set(key, recent);
 	return false;
 }
 
@@ -105,57 +99,53 @@ async function writeRealtimeBackup(wish, wishId, createdAt) {
 
 function getGitHubHeaders() {
 	const token = githubBackupToken.value();
-	return token
-		? { Accept: "application/vnd.github+json", Authorization: `Bearer ${token}`, "X-GitHub-Api-Version": "2022-11-28" }
-		: null;
+	return token ? {
+		Accept: "application/vnd.github+json",
+		Authorization: `Bearer ${token}`,
+		"X-GitHub-Api-Version": "2022-11-28"
+	} : null;
+}
+
+async function ensureArchiveBranch(repositoryUrl, headers) {
+	const response = await fetch(`${repositoryUrl}/git/ref/heads/${githubBackupBranch}`, { headers });
+	if (response.ok) return;
+	if (response.status !== 404) throw new Error(`GitHub branch lookup failed with status ${response.status}.`);
+	const mainResponse = await fetch(`${repositoryUrl}/git/ref/heads/main`, { headers });
+	if (!mainResponse.ok) throw new Error(`GitHub main branch lookup failed with status ${mainResponse.status}.`);
+	const mainReference = await mainResponse.json();
+	const createResponse = await fetch(`${repositoryUrl}/git/refs`, {
+		method: "POST",
+		headers: { ...headers, "Content-Type": "application/json" },
+		body: JSON.stringify({ ref: `refs/heads/${githubBackupBranch}`, sha: mainReference.object.sha })
+	});
+	if (!createResponse.ok && createResponse.status !== 422) {
+		throw new Error(`GitHub archive branch creation failed with status ${createResponse.status}.`);
+	}
 }
 
 async function backupWishToGitHub(wish, wishId) {
-	wish = getBackupWish(wish);
 	const headers = getGitHubHeaders();
-	if (!headers) {
-		throw new Error("GitHub backup is not configured.");
-	}
-
+	if (!headers) throw new Error("GitHub backup is not configured.");
 	const repositoryUrl = `${githubApi}/repos/${githubOwner}/${githubRepo}`;
-	const branchResponse = await fetch(`${repositoryUrl}/git/ref/heads/${githubBackupBranch}`, { headers });
-	if (!branchResponse.ok) {
-		if (branchResponse.status !== 404) throw new Error(`GitHub branch lookup failed with status ${branchResponse.status}.`);
-		const mainResponse = await fetch(`${repositoryUrl}/git/ref/heads/main`, { headers });
-		if (!mainResponse.ok) throw new Error(`GitHub main branch lookup failed with status ${mainResponse.status}.`);
-		const mainReference = await mainResponse.json();
-		const createBranchResponse = await fetch(`${repositoryUrl}/git/refs`, {
-			method: "POST",
-			headers: { ...headers, "Content-Type": "application/json" },
-			body: JSON.stringify({ ref: `refs/heads/${githubBackupBranch}`, sha: mainReference.object.sha })
-		});
-		if (!createBranchResponse.ok && createBranchResponse.status !== 422) {
-			throw new Error(`GitHub archive branch creation failed with status ${createBranchResponse.status}.`);
-		}
-	}
-
-	const path = `${githubBackupDirectory}/${wishId}.json`;
-	const url = `${repositoryUrl}/contents/${path}`;
+	await ensureArchiveBranch(repositoryUrl, headers);
+	const url = `${repositoryUrl}/contents/${githubBackupDirectory}/${wishId}.json`;
 	const existingResponse = await fetch(`${url}?ref=${encodeURIComponent(githubBackupBranch)}`, { headers });
 	let sha;
 	if (existingResponse.ok) {
 		const existing = await existingResponse.json();
 		sha = existing.sha;
 		if (existing.content) {
-			const existingContent = Buffer.from(existing.content.replace(/\s/g, ""), "base64").toString("utf8");
-			const expectedContent = JSON.stringify({ id: wishId, ...wish }, null, 2);
-			if (existingContent === expectedContent) {
-				return;
-			}
+			const current = Buffer.from(existing.content.replace(/\s/g, ""), "base64").toString("utf8");
+			const expected = JSON.stringify({ id: wishId, ...getBackupWish(wish) }, null, 2);
+			if (current === expected) return;
 		}
 	} else if (existingResponse.status !== 404) {
-		throw new Error(`GitHub lookup failed with status ${existingResponse.status}.`);
+		throw new Error(`GitHub archive lookup failed with status ${existingResponse.status}.`);
 	}
 
-	const content = Buffer.from(JSON.stringify({ id: wishId, ...wish }, null, 2)).toString("base64");
 	const payload = {
-		message: `Store birthday wish ${wishId}`,
-		content,
+		message: `Archive birthday wish ${wishId}`,
+		content: Buffer.from(JSON.stringify({ id: wishId, ...getBackupWish(wish) }, null, 2)).toString("base64"),
 		branch: githubBackupBranch,
 		...(sha ? { sha } : {})
 	};
@@ -164,27 +154,28 @@ async function backupWishToGitHub(wish, wishId) {
 		headers: { ...headers, "Content-Type": "application/json" },
 		body: JSON.stringify(payload)
 	});
-	if (!saveResponse.ok) {
-		throw new Error(`GitHub backup failed with status ${saveResponse.status}.`);
-	}
+	if (!saveResponse.ok) throw new Error(`GitHub archive write failed with status ${saveResponse.status}.`);
 }
 
 async function saveWish(wish) {
 	const wishId = getWishId(wish);
-	const wishReference = db.collection("birthdayWishes").doc(wishId);
-
+	const reference = db.collection("birthdayWishes").doc(wishId);
 	await db.runTransaction(async (transaction) => {
-		const snapshot = await transaction.get(wishReference);
+		const snapshot = await transaction.get(reference);
 		if (!snapshot.exists) {
-			transaction.set(wishReference, {
-				...wish,
-				createdAt: FieldValue.serverTimestamp(),
-				backupStatus: "pending"
-			});
+			transaction.create(reference, { ...wish, createdAt: FieldValue.serverTimestamp(), backupStatus: "pending" });
 		}
 	});
-
 	return wishId;
+}
+
+async function replicateWish(document, wishId) {
+	const wish = cleanWish(document.data());
+	if (!wish) throw new Error("Wish did not pass server validation.");
+	await writeRealtimeBackup(wish, wishId, document.data().createdAt);
+	await backupWishToGitHub(wish, wishId);
+	await document.ref.update({ backupStatus: "complete", backupUpdatedAt: FieldValue.serverTimestamp() });
+	await realtimeDb.ref(`birthdayWishes/${wishId}`).update({ githubBackupStatus: "complete", backupUpdatedAt: Date.now() });
 }
 
 exports.archiveNewWish = onDocumentCreated({
@@ -195,97 +186,43 @@ exports.archiveNewWish = onDocumentCreated({
 	retry: true,
 	secrets: [githubBackupToken]
 }, async (event) => {
-	const document = event.data;
-	if (!document) return;
-	const wish = cleanWish(document.data());
-	if (!wish) {
-		console.error("Created wish failed backup validation.", { wishId: event.params.wishId });
-		return;
-	}
-
-	try {
-		await writeRealtimeBackup(wish, event.params.wishId, document.data().createdAt);
-		await backupWishToGitHub(wish, event.params.wishId);
-		await document.ref.update({
-			backupStatus: "complete",
-			backupUpdatedAt: FieldValue.serverTimestamp(),
-			backupError: FieldValue.delete()
-		});
-		await realtimeDb.ref(`birthdayWishes/${event.params.wishId}`).update({
-			githubBackupStatus: "complete",
-			backupUpdatedAt: Date.now()
-		});
-	} catch (error) {
-		await document.ref.update({
-			backupStatus: "pending",
-			backupUpdatedAt: FieldValue.serverTimestamp()
-		});
-		console.error("GitHub wish archive failed; the event will retry.", { wishId: event.params.wishId, error: error.message });
-		throw error;
-	}
+	if (event.data) await replicateWish(event.data, event.params.wishId);
 });
 
 async function retryPendingBackups() {
 	const snapshot = await db.collection("birthdayWishes").where("backupStatus", "==", "pending").limit(25).get();
 	for (const document of snapshot.docs) {
-		const wish = document.data();
 		try {
-			await writeRealtimeBackup(wish, document.id, wish.createdAt);
-			await backupWishToGitHub(wish, document.id);
-			await document.ref.update({ backupStatus: "complete", backupUpdatedAt: FieldValue.serverTimestamp() });
-			await realtimeDb.ref(`birthdayWishes/${document.id}`).update({
-				githubBackupStatus: "complete",
-				backupUpdatedAt: Date.now()
-			});
+			await replicateWish(document, document.id);
 		} catch (error) {
-			console.error("GitHub backup retry is pending.", { wishId: document.id });
+			console.error("Wish backup retry failed.", { wishId: document.id, error: error.message });
 		}
 	}
 }
 
-exports.wishesApi = onRequest({ region: "us-central1", maxInstances: 3, secrets: [githubBackupToken] }, async (request, response) => {
-	setSecurityHeaders(response);
-	if (!configureCors(request, response)) {
-		return response.status(403).json({ error: "Origin not allowed." });
+exports.retryPendingBackups = onSchedule({
+	schedule: "every 15 minutes",
+	region: "us-central1",
+	maxInstances: 1,
+	secrets: [githubBackupToken]
+}, retryPendingBackups);
+
+exports.wishesApi = onRequest({ region: "us-central1", maxInstances: 3 }, async (request, response) => {
+	response.set("Cache-Control", "no-store");
+	response.set("X-Content-Type-Options", "nosniff");
+	response.set("Referrer-Policy", "no-referrer");
+	if (request.method !== "POST") {
+		response.set("Allow", "POST");
+		return response.status(405).json({ error: "Method not allowed." });
 	}
-	if (request.method === "OPTIONS") return response.status(204).send("");
-
-	if (request.method === "GET") {
-		try {
-			if (request.path.endsWith("/admin/wishes")) {
-				if (!(await isVerifiedAdmin(request))) return response.status(403).json({ error: "Administrator access required." });
-				const snapshot = await db.collection("birthdayWishes").orderBy("createdAt", "desc").limit(500).get();
-				return response.status(200).json({ wishes: snapshot.docs.map((document) => ({ id: document.id, ...document.data() })) });
-			}
-			const snapshot = await db.collection("birthdayWishes").orderBy("createdAt", "desc").limit(maxWishes).get();
-			return response.status(200).json({ wishes: snapshot.docs.map((doc) => doc.data()) });
-		} catch (error) {
-			console.error("Could not read birthday wishes.", error);
-			return response.status(500).json({ error: "Unable to load wishes." });
-		}
+	if (isRateLimited(request)) return response.status(429).json({ error: "Please try again later." });
+	const wish = cleanWish(request.body);
+	if (!wish) return response.status(400).json({ error: "Invalid wish." });
+	try {
+		await saveWish(wish);
+		return response.status(201).json({ ok: true });
+	} catch (error) {
+		console.error("Wish write failed.", error);
+		return response.status(500).json({ error: "Unable to save wish." });
 	}
-
-	if (request.method === "POST") {
-		if (isRateLimited(request)) {
-			return response.status(429).json({ error: "Too many wishes. Please try again later." });
-		}
-
-		const wish = cleanWish(request.body);
-		if (!wish) {
-			return response.status(400).json({ error: "Invalid wish." });
-		}
-
-		try {
-			await saveWish(wish);
-			return response.status(201).json({ ok: true });
-		} catch (error) {
-			console.error("Could not save birthday wish.", error);
-			return response.status(500).json({ error: "Unable to save wish." });
-		}
-	}
-
-	response.set("Allow", "GET, POST");
-	return response.status(405).json({ error: "Method not allowed." });
 });
-
-exports.retryGitHubBackups = onSchedule({ schedule: "every 15 minutes", secrets: [githubBackupToken] }, retryPendingBackups);

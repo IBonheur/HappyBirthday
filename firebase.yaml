@@ -3,16 +3,25 @@ project:
   display_name: HappyBirthday
 
 frontend:
-  platform: github-pages
-  workflow: .github/workflows/github-pages.yaml
+  platforms:
+    - firebase-hosting
+    - github-pages
+  workflows:
+    - .github/workflows/firebase-hosting-merge.yml
+    - .github/workflows/github-pages.yaml
 
 firestore:
   rules: database/firestore.rules
   indexes: database/firestore.indexes.json
 
+realtime_database:
+  rules: database.rules.json
+  url: https://happybirthday-6d8ee-default-rtdb.firebaseio.com
+
 deployment:
-  data_workflow: .github/workflows/firebase-data.yaml
+  workflow: .github/workflows/firebase-hosting-merge.yml
   backend_workflow: .github/workflows/firebase-backend.yaml
   services:
+    - hosting
     - firestore
-    - functions
+    - realtime-database
