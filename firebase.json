@@ -82,10 +82,9 @@
       { "source": "index.html", "headers": [{ "key": "Cache-Control", "value": "no-cache, no-store, must-revalidate" }] },
       { "source": "**/*.@(js|css)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] },
       { "source": "image/*", "headers": [{ "key": "Cache-Control", "value": "public, max-age=86400, stale-while-revalidate=604800" }] }
-    ],
-
-     "headers": [
-    {
+    
+    ];
+    
       "source": "**",
       "headers": [
         {
@@ -94,7 +93,7 @@
         }
       ]
     }
-  ],
+  ]
 
   },
   "storage": { "rules": "storage.rules" },
