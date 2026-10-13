@@ -300,18 +300,6 @@ body > :not(.privacy-screen) {
 	text-transform: uppercase;
 }
 
-#wish-count {
-	display: grid;
-	width: 1.5rem;
-	height: 1.5rem;
-	place-items: center;
-	border-radius: 50%;
-	color: var(--night);
-	background: var(--mint);
-	font-size: 0.72rem;
-	font-weight: 800;
-}
-
 .wish-ticker {
 	min-height: 3rem;
 	overflow: hidden;
@@ -428,7 +416,6 @@ body > :not(.privacy-screen) {
 }
 
 .form-status { min-height: 1.1rem; margin: 0.4rem 0 0; color: var(--mint); font-size: 0.8rem; }
-.form-status.is-error { color: #ffd08a; }
 
 .float {
 	position: fixed;
@@ -640,5 +627,113 @@ body {
 
 	.wish-panel:not([hidden]) {
 		padding: 0.6rem;
+	}
+}
+
+.page-shell {
+	width: min(100%, 72rem);
+	height: auto;
+	min-height: 0;
+	max-height: none;
+	grid-template-rows: auto auto auto;
+}
+
+.birthday-card {
+	grid-template-columns: minmax(0, 1fr) minmax(18rem, 0.82fr);
+	grid-template-rows: minmax(0, 1fr);
+	min-height: clamp(30rem, 72dvh, 48rem);
+	height: auto;
+	padding: clamp(0.5rem, 1.5vw, 1rem);
+	gap: clamp(0.75rem, 2vw, 1.5rem);
+}
+
+.birthday-photo {
+	position: relative;
+	inset: auto;
+	width: 100%;
+	height: 100%;
+	min-height: 0;
+	aspect-ratio: 3 / 4;
+	border-radius: 1rem;
+}
+
+.birthday-photo img {
+	width: 100%;
+	height: 100%;
+	object-fit: contain;
+	object-position: center;
+}
+
+.message-overlay {
+	align-self: center;
+	width: 100%;
+	margin: 0;
+	padding: clamp(1rem, 2vw, 1.75rem);
+	background: rgba(18, 13, 36, 0.38);
+}
+
+.wish-panel:not([hidden]) {
+	max-height: none;
+}
+
+.float {
+	position: static;
+	justify-self: end;
+	margin-top: 0.25rem;
+}
+
+@media (max-width: 760px) {
+	body {
+		place-items: start center;
+	}
+
+	.page-shell {
+		width: min(100%, 36rem);
+		margin: 0 auto;
+	}
+
+	.birthday-card {
+		position: relative;
+		grid-template-columns: minmax(0, 1fr);
+		grid-template-rows: minmax(0, 1fr);
+		place-items: end center;
+		min-height: 0;
+		aspect-ratio: 3 / 4;
+		padding: 0.45rem;
+	}
+
+	.birthday-photo {
+		position: absolute;
+		inset: 0.45rem;
+		width: auto;
+		height: auto;
+		aspect-ratio: auto;
+	}
+
+	.message-overlay {
+		z-index: 2;
+		width: 100%;
+		margin: 0.6rem;
+		padding: clamp(0.8rem, 4vw, 1.15rem);
+		background: rgba(18, 13, 36, 0.78);
+		backdrop-filter: blur(8px);
+		-webkit-backdrop-filter: blur(8px);
+	}
+
+	#msg {
+		font-size: clamp(1.7rem, 7vw, 2.8rem);
+	}
+
+	.wish-panel:not([hidden]) {
+		grid-template-columns: minmax(0, 1fr);
+		max-height: none;
+	}
+
+	.form-fields {
+		grid-template-columns: minmax(0, 1fr);
+	}
+
+	.float {
+		position: static;
 	}
 }

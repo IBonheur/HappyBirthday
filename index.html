@@ -5,9 +5,10 @@
 	<meta charset="UTF-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1">
 	<meta name="description" content="Celebrate Bonheur with a birthday wish.">
-	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' https://www.gstatic.com; connect-src 'self' https://*.googleapis.com https://*.firebaseio.com https://us-central1-happybirthday-6d8ee.cloudfunctions.net; object-src 'none'; base-uri 'self'; frame-ancestors 'none'">
+	<meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src 'self' data:; style-src 'self'; script-src 'self' https://www.gstatic.com; connect-src 'self' https://www.gstatic.com https://*.googleapis.com https://*.firebaseio.com https://securetoken.googleapis.com https://us-central1-happybirthday-6d8ee.cloudfunctions.net; frame-src 'self' https://happybirthday-6d8ee.firebaseapp.com https://accounts.google.com; form-action 'self' https://accounts.google.com; object-src 'none'; base-uri 'self'">
 	<title>Happy Birthday, Bonheur</title>
 	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="frontend/layout-overrides.css">
 </head>
 
 <body>
@@ -35,11 +36,10 @@
 		<section class="wishes" aria-labelledby="wishes-title">
 			<div class="section-heading">
 				<h2 id="wishes-title">From everyone wishing you well</h2>
-				<span id="wish-count">0</span>
 			</div>
 			<div class="wish-ticker" aria-live="polite">
 				<div class="wish-ticker-text" id="wish-ticker-text">
-					<strong class="wish-author" id="wish-author">Aline</strong>
+					<strong class="wish-author" id="wish-author">Birthday friends</strong>
 					<span class="wish-message" id="wish-message">Your birthday wishes will appear here.</span>
 				</div>
 			</div>
@@ -73,7 +73,7 @@
 	<footer class="float" id="float">Bonheur@BonTech</footer>
 	<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-	<script type="module" src="script.js"></script>
+	<script type="module" src="frontend/app.js"></script>
 </body>
 
 </html>

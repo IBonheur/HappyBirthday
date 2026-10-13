@@ -31,7 +31,7 @@ jobs:
       - name: Prepare frontend
         run: |
           mkdir _site
-          cp index.html style.css script.js 404.html .nojekyll _site/
+          cp index.html style.css 404.html .nojekyll _site/
           cp -R frontend image _site/
 
       - name: Upload frontend

@@ -1,4 +1,4 @@
-import { createWish, listWishes } from "./frontend/api.js";
+import { createWish, watchWishes } from "./frontend/api.js";
 import { readJson, writeJson } from "./frontend/storage.js";
 import { STORAGE_KEYS, MAX_LOCAL_WISHES, MAX_PENDING_WISHES } from "./frontend/config.js";
 
@@ -8,7 +8,6 @@ const wishName = document.querySelector("#wish-name");
 const wishInput = document.querySelector("#wish-input");
 const wishPanel = document.querySelector("#wish-panel");
 const wishList = document.querySelector("#wish-list");
-const wishCount = document.querySelector("#wish-count");
 const tickerText = document.querySelector("#wish-ticker-text");
 const wishAuthor = document.querySelector("#wish-author");
 const wishMessage = document.querySelector("#wish-message");
@@ -19,16 +18,7 @@ const storageKey = STORAGE_KEYS.wishes;
 const pendingStorageKey = STORAGE_KEYS.pendingWishes;
 const revealDelay = 10000;
 const imageChangeDelay = 30000;
-const starterWishes = [
-	{ name: "Mihigo", message: "Umunsi mwiza wamavuko" },
-	{ name: "Aline", message: "Wishing you a year full of bright moments!" },
-	{ name: "Cyusa", message: "May your birthday be as wonderful as you are." },
-	{ name: "Mike", message: "Nkwifurije imigisha imana itanga Umwaka uzakubere uwi byishimo gushirwa ni byiza biva ku Mana" },
-	{ name: "Mugisha", message: "More joy, laughter, and beautiful memories!" },
-	{ name: "Gaby", message: "Cheers to your happiest year yet!" },
-	{ name: "Naomi", message: "Isabukuru nziza yamavuko Imana iguhaze imigisha" },
-	
-];
+const emptyTickerWish = { name: "Birthday friends", message: "Your birthday wishes will appear here." };
 const birthdayImages = ["image/image1.jpg", "image/image2.jpg"];
 const fallbackImage = birthdayImages[0];
 const backgroundScenes = ["scene-balloons", "scene-cakes", "scene-hearts"];
@@ -42,6 +32,9 @@ let imageIndex = 0;
 let imageTimer;
 let sceneIndex = 0;
 let sceneTimer;
+let stopWishUpdates;
+let wishUpdatesGeneration = 0;
+let flushingPending = false;
 
 function setPrivacyMode(enabled) {
 	document.body.classList.toggle("privacy-mode", enabled);
@@ -49,13 +42,20 @@ function setPrivacyMode(enabled) {
 }
 
 function handlePageExit() {
+	wishUpdatesGeneration += 1;
 	setPrivacyMode(true);
 	window.clearInterval(tickerTimer);
 	window.clearInterval(imageTimer);
 	window.clearInterval(sceneTimer);
+	stopWishUpdates?.();
+	stopWishUpdates = null;
 }
 
 function normalizeWish(wish) {
+	if (typeof wish === "string" && wish.trim()) {
+		return { name: "A friend", message: wish.trim() };
+	}
+
 	if (wish && typeof wish.name === "string" && typeof wish.message === "string") {
 		const name = wish.name.trim();
 		const message = wish.message.trim();
@@ -65,20 +65,49 @@ function normalizeWish(wish) {
 	return null;
 }
 
-async function loadCloudWishes() {
+async function startWishUpdates() {
+	const generation = ++wishUpdatesGeneration;
+	stopWishUpdates?.();
+	stopWishUpdates = null;
 	try {
-		wishes = (await listWishes()).map(normalizeWish).filter(Boolean);
-		saveWishes();
-		renderWishes();
-		tickerIndex = 0;
-		showNextWish();
+		const stop = await watchWishes((latest, fromCache) => {
+			wishes = latest.map(normalizeWish).filter(Boolean);
+			saveWishes();
+			renderWishes();
+			tickerIndex = 0;
+			showNextWish();
+			if (fromCache && pendingWishes.length) {
+				formStatus.textContent = "Cloud connection unavailable. Your wish is still awaiting confirmation.";
+			}
+		}, () => {
+			formStatus.textContent = pendingWishes.length
+				? "Cloud connection unavailable. Your wish is still awaiting confirmation."
+				: "Unable to refresh wishes right now.";
+		});
+		if (generation !== wishUpdatesGeneration || document.hidden) {
+			stop();
+			return;
+		}
+		stopWishUpdates = stop;
 	} catch {
-		formStatus.textContent = "";
+		formStatus.textContent = pendingWishes.length
+			? "Cloud connection unavailable. Your wish is still awaiting confirmation."
+			: "Unable to connect to the wishes service right now.";
 	}
 }
 
 async function saveCloudWish(wish) {
-	await createWish(wish);
+	let timeoutId;
+	try {
+		await Promise.race([
+			createWish(wish),
+			new Promise((_, reject) => {
+				timeoutId = window.setTimeout(() => reject(new Error("Cloud confirmation timed out.")), 12000);
+			})
+		]);
+	} finally {
+		window.clearTimeout(timeoutId);
+	}
 }
 
 document.addEventListener("dragstart", (event) => event.preventDefault());
@@ -92,77 +121,65 @@ window.addEventListener("afterprint", () => {
 window.addEventListener("pagehide", handlePageExit);
 
 function loadWishes() {
-	try {
-		const savedWishes = readJson(storageKey, []);
-		return Array.isArray(savedWishes) ? savedWishes.map(normalizeWish).filter(Boolean).slice(0, MAX_LOCAL_WISHES) : [];
-	} catch {
-		return [];
-	}
+	const savedWishes = readJson(storageKey, []);
+	return Array.isArray(savedWishes) ? savedWishes.map(normalizeWish).filter(Boolean).slice(0, MAX_LOCAL_WISHES) : [];
 }
 
 function loadPendingWishes() {
-	try {
-		const savedWishes = readJson(pendingStorageKey, []);
-		return Array.isArray(savedWishes) ? savedWishes.map(normalizeWish).filter(Boolean).slice(0, MAX_PENDING_WISHES) : [];
-	} catch {
-		return [];
-	}
+	const savedWishes = readJson(pendingStorageKey, []);
+	return Array.isArray(savedWishes) ? savedWishes.map(normalizeWish).filter(Boolean).slice(0, MAX_PENDING_WISHES) : [];
 }
 
 function savePendingWishes() {
-	try {
-		writeJson(pendingStorageKey, pendingWishes);
-	} catch {
-		return;
-	}
+	return writeJson(pendingStorageKey, pendingWishes);
 }
 
 async function flushPendingWishes() {
-	if (!pendingWishes.length) {
+	if (!pendingWishes.length || flushingPending || document.hidden) {
 		return;
 	}
 
-	const remainingWishes = [];
-	for (const pendingWish of pendingWishes) {
-		try {
-			await saveCloudWish(pendingWish);
-		} catch {
-			remainingWishes.push(pendingWish);
+	flushingPending = true;
+	try {
+		const remainingWishes = [];
+		for (const pendingWish of pendingWishes) {
+			try {
+				await saveCloudWish(pendingWish);
+				wishes = [pendingWish, ...wishes.filter((wish) => wish.name !== pendingWish.name || wish.message !== pendingWish.message)].slice(0, MAX_LOCAL_WISHES);
+			} catch {
+				remainingWishes.push(pendingWish);
+			}
 		}
+		pendingWishes = remainingWishes;
+		savePendingWishes();
+		saveWishes();
+		renderWishes();
+		formStatus.textContent = pendingWishes.length === 0
+			? "Pending wishes have been confirmed in the cloud."
+			: "Some wishes are still awaiting cloud confirmation.";
+	} finally {
+		flushingPending = false;
 	}
-	pendingWishes = remainingWishes;
-	savePendingWishes();
-}
-
-async function synchronizeWishes() {
-	await loadCloudWishes();
-	await flushPendingWishes();
-	await loadCloudWishes();
-}
-
-function createClientId() {
-	const bytes = new Uint8Array(15);
-	crypto.getRandomValues(bytes);
-	return [...bytes].map((byte) => byte.toString(36).padStart(2, "0")).join("").slice(0, 20);
 }
 
 function saveWishes() {
-	try {
-		writeJson(storageKey, wishes);
-	} catch {
-		return;
-	}
+	return writeJson(storageKey, wishes);
 }
 function getTickerWishes() {
-	return [...wishes, ...starterWishes];
+	return wishes.length ? wishes : [emptyTickerWish];
 }
 function showNextWish() {
 	const availableWishes = getTickerWishes();
 	const currentWish = availableWishes[tickerIndex % availableWishes.length];
 	tickerText.classList.remove("is-changing");
 	void tickerText.offsetWidth;
-	wishAuthor.textContent = currentWish.name;
-	wishMessage.textContent = currentWish.message;
+	if (typeof currentWish === "string") {
+		wishAuthor.textContent = "Birthday friends";
+		wishMessage.textContent = currentWish;
+	} else {
+		wishAuthor.textContent = currentWish.name;
+		wishMessage.textContent = currentWish.message;
+	}
 	tickerText.classList.add("is-changing");
 	tickerIndex += 1;
 }
@@ -206,7 +223,6 @@ function renderWishes() {
 		wishItem.textContent = `${wish.name}: ${wish.message}`;
 		wishList.append(wishItem);
 	});
-	wishCount.textContent = wishes.length;
 }
 
 function showThankYou(name) {
@@ -214,16 +230,6 @@ function showThankYou(name) {
 	toast.classList.add("is-visible");
 	window.setTimeout(() => toast.classList.remove("is-visible"), 3200);
 }
-
-function clearNameError() {
-	wishName.removeAttribute("aria-invalid");
-	if (formStatus.classList.contains("is-error")) {
-		formStatus.textContent = "";
-		formStatus.classList.remove("is-error");
-	}
-}
-
-wishName.addEventListener("input", clearNameError);
 
 wishForm.addEventListener("submit", async (event) => {
 	event.preventDefault();
@@ -233,32 +239,43 @@ wishForm.addEventListener("submit", async (event) => {
 
 	if (!name || !wish) {
 		formStatus.textContent = "Please add your name and wish.";
-		formStatus.classList.add("is-error");
 		(name ? wishInput : wishName).focus();
 		return;
 	}
 
-	const newWish = { name, message: wish, clientId: createClientId() };
+	const newWish = { name, message: wish };
 	submitButton.disabled = true;
 	formStatus.textContent = "";
-	formStatus.classList.remove("is-error");
 
 	try {
 		await saveCloudWish(newWish);
-		wishes = [newWish, ...wishes].slice(0, 50);
-		formStatus.textContent = "";
-	} catch {
-		pendingWishes = [newWish, ...pendingWishes].slice(0, 20);
-		savePendingWishes();
-		formStatus.textContent = "Saved on this device and will retry when the connection returns.";
+		wishes = [newWish, ...wishes.filter((wish) => wish.name !== newWish.name || wish.message !== newWish.message)].slice(0, MAX_LOCAL_WISHES);
+		saveWishes();
+		formStatus.textContent = "Your wish has been sent.";
+		wishForm.reset();
+		showThankYou(name);
+	} catch (error) {
+		if (error?.message === "Invalid wish.") {
+			formStatus.textContent = "Please check your name and message, then try again.";
+		} else {
+			const alreadyQueued = pendingWishes.some((wish) => wish.name === newWish.name && wish.message === newWish.message);
+			if (!alreadyQueued && pendingWishes.length >= MAX_PENDING_WISHES) {
+				formStatus.textContent = "The retry queue is full. Keep this message and try again after earlier wishes reconnect.";
+			} else {
+				if (!alreadyQueued) pendingWishes = [newWish, ...pendingWishes];
+				if (savePendingWishes()) {
+					formStatus.textContent = "Connection unavailable. Your wish is awaiting cloud confirmation and will retry automatically.";
+					wishForm.reset();
+				} else {
+					formStatus.textContent = "We could not reach the server or save a retry. Please keep this page open and try again.";
+				}
+			}
+		}
 	}
 
 	renderWishes();
 	tickerIndex = 0;
 	showNextWish();
-	wishForm.reset();
-	wishName.removeAttribute("aria-invalid");
-	showThankYou(name);
 	submitButton.disabled = false;
 });
 
@@ -272,9 +289,15 @@ renderWishes();
 startTicker();
 startImageRotation();
 startSceneRotation();
-synchronizeWishes();
+startWishUpdates();
+flushPendingWishes();
+window.addEventListener("online", flushPendingWishes);
+window.setInterval(() => {
+	if (!document.hidden) flushPendingWishes();
+}, 30000);
 window.setTimeout(() => {
 	wishPanel.hidden = false;
+	wishInput.focus({ preventScroll: true });
 }, revealDelay);
 
 document.addEventListener("visibilitychange", () => {
@@ -285,7 +308,12 @@ document.addEventListener("visibilitychange", () => {
 		startTicker();
 		startImageRotation();
 		startSceneRotation();
+		startWishUpdates();
 	}
+});
+
+window.addEventListener("pageshow", () => {
+	if (!document.hidden) startWishUpdates();
 });
 
 window.addEventListener("blur", () => setPrivacyMode(true));
