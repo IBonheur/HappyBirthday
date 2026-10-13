@@ -5,10 +5,12 @@ const { defineSecret } = require("firebase-functions/params");
 const { initializeApp } = require("firebase-admin/app");
 const { getAuth } = require("firebase-admin/auth");
 const { getFirestore, FieldValue } = require("firebase-admin/firestore");
+const { getDatabase } = require("firebase-admin/database");
 const crypto = require("node:crypto");
 
-const app = initializeApp();
+const app = initializeApp({ databaseURL: "https://happybirthday-6d8ee-default-rtdb.firebaseio.com" });
 const db = getFirestore(app, "happybirthday");
+const realtimeDb = getDatabase(app);
 const auth = getAuth(app);
 const maxWishes = 50;
 const requestWindowMs = 60 * 1000;
@@ -87,6 +89,18 @@ function getWishId(wish) {
 
 function getBackupWish(wish) {
 	return { name: wish.name, message: wish.message };
+}
+
+async function writeRealtimeBackup(wish, wishId, createdAt) {
+	const timestamp = typeof createdAt?.toMillis === "function" ? createdAt.toMillis() : Date.now();
+	await realtimeDb.ref(`birthdayWishes/${wishId}`).set({
+		id: wishId,
+		...getBackupWish(wish),
+		createdAt: timestamp,
+		realtimeBackupStatus: "complete",
+		githubBackupStatus: "pending",
+		backupUpdatedAt: Date.now()
+	});
 }
 
 function getGitHubHeaders() {
@@ -190,11 +204,16 @@ exports.archiveNewWish = onDocumentCreated({
 	}
 
 	try {
+		await writeRealtimeBackup(wish, event.params.wishId, document.data().createdAt);
 		await backupWishToGitHub(wish, event.params.wishId);
 		await document.ref.update({
 			backupStatus: "complete",
 			backupUpdatedAt: FieldValue.serverTimestamp(),
 			backupError: FieldValue.delete()
+		});
+		await realtimeDb.ref(`birthdayWishes/${event.params.wishId}`).update({
+			githubBackupStatus: "complete",
+			backupUpdatedAt: Date.now()
 		});
 	} catch (error) {
 		await document.ref.update({
@@ -211,8 +230,13 @@ async function retryPendingBackups() {
 	for (const document of snapshot.docs) {
 		const wish = document.data();
 		try {
+			await writeRealtimeBackup(wish, document.id, wish.createdAt);
 			await backupWishToGitHub(wish, document.id);
 			await document.ref.update({ backupStatus: "complete", backupUpdatedAt: FieldValue.serverTimestamp() });
+			await realtimeDb.ref(`birthdayWishes/${document.id}`).update({
+				githubBackupStatus: "complete",
+				backupUpdatedAt: Date.now()
+			});
 		} catch (error) {
 			console.error("GitHub backup retry is pending.", { wishId: document.id });
 		}

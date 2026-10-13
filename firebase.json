@@ -89,7 +89,6 @@
       "database/**",
       "dataconnect/**",
       ".github/**",
-      "script.js",
       "*.rules",
       "*.json",
       "*.yaml",

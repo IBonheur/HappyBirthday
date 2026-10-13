@@ -5,6 +5,7 @@ import { getFirestore } from "https://www.gstatic.com/firebasejs/12.1.0/firebase
 const firebaseConfig = {
 	apiKey: "AIzaSyDDkhqR-guxHmU8kagnzDQOYEdBvWieuhc",
 	authDomain: "happybirthday-6d8ee.firebaseapp.com",
+	databaseURL: "https://happybirthday-6d8ee-default-rtdb.firebaseio.com",
 	projectId: "happybirthday-6d8ee",
 	storageBucket: "happybirthday-6d8ee.firebasestorage.app",
 	messagingSenderId: "31161256619",

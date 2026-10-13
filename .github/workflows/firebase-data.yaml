@@ -1,4 +1,4 @@
-name: Manually deploy Firestore rules
+name: Manually deploy database rules
 
 on:
   workflow_dispatch:
@@ -22,7 +22,7 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT_HAPPYBIRTHDAY_6D8EE }}
 
-      - name: Deploy Firestore rules and indexes
+      - name: Deploy Firestore and Realtime Database rules
         env:
           GOOGLE_APPLICATION_CREDENTIALS: ${{ steps.auth.outputs.credentials_file_path }}
-        run: npx --yes firebase-tools@latest deploy --project "$FIREBASE_PROJECT_ID" --only firestore
+        run: npx --yes firebase-tools@latest deploy --project "$FIREBASE_PROJECT_ID" --only firestore,database --non-interactive
