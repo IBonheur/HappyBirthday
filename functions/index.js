@@ -227,12 +227,12 @@ exports.wishesApi = onRequest({ region: "us-central1", maxInstances: 3 }, async 
 			return response.status(200).json({ wishes: snapshot.docs.map((document) => document.data()) });
 		} catch (error) {
 			console.error("Could not read birthday wishes.", error);
-			return response.status(500).json({ error: "Unable to load wishes." });
+			return response.status(500).json({ error: "" });
 		}
 	}
 
 	if (request.method === "POST") {
-		if (isRateLimited(request)) return response.status(429).json({ error: "Please try again later." });
+		if (isRateLimited(request)) return response.status(429).json({ error: "" });
 		const wish = cleanWish(request.body);
 		if (!wish) return response.status(400).json({ error: "Invalid wish." });
 		try {
@@ -240,7 +240,7 @@ exports.wishesApi = onRequest({ region: "us-central1", maxInstances: 3 }, async 
 			return response.status(201).json({ ok: true });
 		} catch (error) {
 			console.error("Wish write failed.", error);
-			return response.status(500).json({ error: "Unable to save wish." });
+			return response.status(500).json({ error: "" });
 		}
 	}
 
